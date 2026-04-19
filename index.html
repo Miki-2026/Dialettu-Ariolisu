@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -6,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dialetti Pro V16.9.5 - GitHub Live</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
-    
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
     <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
 
@@ -42,222 +42,115 @@
 
         .input-esaltato { width: 100%; border: 2px solid var(--border-input); border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 1rem; background: white; }
         .input-termine { font-family: 'Playfair Display'; font-size: 1.2rem; font-weight: 700; }
-        
+
         .chip-container { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; min-height: 20px; }
         .chip { background: var(--primary); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; }
         .chip.missing { background: #94a3b8; }
 
         .audio-console { background: rgba(255,255,255,0.5); border: 2px dashed var(--border-input); border-radius: 8px; padding: 10px; text-align: center; }
         .btn-audio { width: 35px; height: 35px; border-radius: 50%; border: none; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
-        
+
         #toast { position: fixed; bottom: 50px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; display: none; z-index: 9999; }
         .btn-util { background: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        
+
         footer { background: #334155; color: #cbd5e1; text-align: center; padding: 6px; font-size: 0.75rem; border-top: 1px solid var(--ariolisi-color); }
         .footer-name { font-style: italic; font-weight: 800; color: #ffffff; margin-left: 5px; }
 
         #info-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 5000; }
-        
+
+        /* === LOGIN MODAL === */
+        #login-modal {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9000;
+        }
+        #login-box {
+            background: white; border-radius: 14px; padding: 36px 30px;
+            width: min(380px, 92vw); text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        #login-box h2 { font-family: 'Playfair Display', serif; color: var(--ariolisi-color); font-size: 1.5rem; margin-bottom: 4px; }
+        #login-box p  { font-size: 0.78rem; color: #64748b; margin-bottom: 20px; }
+        #login-pwd    { width: 100%; padding: 12px; border: 2px solid var(--border-input); border-radius: 7px; font-size: 1rem; margin-bottom: 10px; text-align: center; letter-spacing: 3px; }
+        #login-error  { color: var(--danger); font-size: 0.78rem; min-height: 18px; margin-bottom: 8px; }
+        #login-btn    { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 7px; font-size: 1rem; font-weight: 800; cursor: pointer; }
+        #login-auth-status { font-size: 0.68rem; color: #94a3b8; margin-top: 12px; min-height: 16px; }
+
         /* === TERMINE SEARCH DROPDOWN === */
         .termine-wrapper { position: relative; }
         #termine-suggestions {
-            position: absolute;
-            top: 100%; left: 0; right: 0;
-            background: white;
-            border: 2px solid var(--accent);
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            z-index: 200;
-            max-height: 180px;
-            overflow-y: auto;
-            display: none;
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 2px solid var(--accent); border-top: none;
+            border-radius: 0 0 8px 8px; z-index: 200;
+            max-height: 180px; overflow-y: auto; display: none;
             box-shadow: 0 6px 16px rgba(0,0,0,0.15);
         }
-        .sugg-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.9rem;
-        }
+        .sugg-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
         .sugg-item:hover { background: var(--accent); color: white; }
         .sugg-item small { opacity: 0.7; font-size: 0.75rem; display: block; }
         #f_termine.termine-exists { border-color: var(--ariolisi-color); background: #fff8f0; }
-        .termine-badge {
-            display: none;
-            font-size: 0.65rem;
-            color: var(--ariolisi-color);
-            font-weight: 700;
-            margin-top: -8px;
-            margin-bottom: 6px;
-        }
+        .termine-badge { display: none; font-size: 0.65rem; color: var(--ariolisi-color); font-weight: 700; margin-top: -8px; margin-bottom: 6px; }
 
         /* === STAMPA ARCHIVIO COMPLETO === */
         #print-archive { display: none; }
         @media print {
             body > *:not(#print-archive) { display: none !important; }
-            #print-archive {
-                display: block !important;
-                font-family: 'Inter', sans-serif;
-                padding: 20px;
-                background: white;
-            }
+            #print-archive { display: block !important; font-family: 'Inter', sans-serif; padding: 20px; background: white; }
             #print-archive h1 { font-family: 'Playfair Display', serif; color: #E67E00; font-size: 1.8rem; margin-bottom: 4px; }
             #print-archive .print-meta { font-size: 0.75rem; color: #64748b; margin-bottom: 20px; }
-            .print-card {
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                padding: 14px 18px;
-                margin-bottom: 14px;
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }
+            .print-card { border: 1px solid #ccc; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
             .print-card h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 6px; }
             .print-card .print-row { font-size: 0.82rem; margin-bottom: 3px; }
             .print-card .print-label { font-weight: 700; color: #0000FF; text-transform: uppercase; font-size: 0.68rem; }
         }
 
-        /* === MOBILE: nascondi stampa nell'header, mostra nel menu azioni === */
+        /* === MOBILE: nascondi stampa nell'header, mostra nel form === */
         @media (max-width: 900px) {
             .btn-stampa-header { display: none !important; }
-            .btn-stampa-form { display: inline-block !important; }
+            .btn-stampa-form   { display: inline-block !important; }
         }
         .btn-stampa-form { display: none; }
 
-        @media print {
-            aside, header, footer, .nav-btns, .audio-console, .dict-icon, .btn-util, button { display: none !important; }
-            body { background: white; overflow: visible; }
-            .app-container { display: block; }
-            .form-container { box-shadow: none; border: 1px solid #ccc; width: 100%; max-width: 100%; }
-        }
-
         /* === MOBILE / TABLET === */
         .sidebar-toggle {
-            display: none;
-            background: none;
-            border: 1px solid rgba(255,255,255,0.5);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.1rem;
+            display: none; background: none; border: 1px solid rgba(255,255,255,0.5);
+            color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 1.1rem;
         }
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 900;
-        }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 900; }
 
         @media (max-width: 900px) {
-            /* Sidebar */
             aside {
-                position: fixed;
-                left: -105%;
-                top: 0;
-                height: 100%;
-                z-index: 950;
-                width: min(320px, 85vw);
-                transition: left 0.28s ease;
+                position: fixed; left: -105%; top: 0; height: 100%; z-index: 950;
+                width: min(320px, 85vw); transition: left 0.28s ease;
                 box-shadow: 4px 0 20px rgba(0,0,0,0.2);
             }
-            aside.open {
-                left: 0;
-            }
-            .sidebar-overlay.open {
-                display: block;
-            }
-            .sidebar-toggle {
-                display: inline-flex;
-                align-items: center;
-            }
-
-            /* Header */
-            header {
-                padding: 0.6rem 1rem;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            header > div:first-child {
-                flex: 1;
-                min-width: 0;
-            }
-            header div[style*="font-weight: 800"] {
-                font-size: 0.9rem !important;
-            }
-            .nav-btns {
-                gap: 6px;
-                flex-wrap: wrap;
-            }
-            .btn-util {
-                padding: 6px 9px;
-                font-size: 0.72rem;
-            }
-
-            /* Main area */
-            main {
-                padding: 0.75rem;
-            }
-            .form-container {
-                padding: 1rem;
-            }
-
-            /* Title row */
-            .form-container > div:first-child {
-                flex-direction: column !important;
-                align-items: stretch !important;
-                gap: 10px;
-            }
-            .form-container > div:first-child > div:last-child {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-            .evidenza-ariolisi {
-                font-size: 1.3rem;
-            }
-
-            /* All grids → single column */
+            aside.open { left: 0; }
+            .sidebar-overlay.open { display: block; }
+            .sidebar-toggle { display: inline-flex; align-items: center; }
+            header { padding: 0.6rem 1rem; flex-wrap: wrap; gap: 8px; }
+            header > div:first-child { flex: 1; min-width: 0; }
+            header div[style*="font-weight: 800"] { font-size: 0.9rem !important; }
+            .nav-btns { gap: 6px; flex-wrap: wrap; }
+            .btn-util { padding: 6px 9px; font-size: 0.72rem; }
+            main { padding: 0.75rem; }
+            .form-container { padding: 1rem; }
+            .form-container > div:first-child { flex-direction: column !important; align-items: stretch !important; gap: 10px; }
+            .form-container > div:first-child > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; }
+            .evidenza-ariolisi { font-size: 1.3rem; }
             div[style*="grid-template-columns: 2fr 1fr"],
             div[style*="grid-template-columns: 1fr 220px"],
-            div[style*="grid-template-columns: 1fr 1fr"] {
-                display: flex !important;
-                flex-direction: column !important;
-            }
-
-            /* Audio console */
-            .audio-console {
-                padding: 8px;
-            }
-
-            /* Inputs touch-friendly */
-            .input-esaltato {
-                padding: 12px 10px;
-                font-size: 1rem;
-            }
-            textarea.input-esaltato {
-                rows: 4;
-                min-height: 90px;
-            }
-
-            /* Toast */
-            #toast {
-                bottom: 20px;
-                right: 10px;
-                left: 10px;
-                text-align: center;
-            }
+            div[style*="grid-template-columns: 1fr 1fr"] { display: flex !important; flex-direction: column !important; }
+            .audio-console { padding: 8px; }
+            .input-esaltato { padding: 12px 10px; font-size: 1rem; }
+            textarea.input-esaltato { min-height: 90px; }
+            #toast { bottom: 20px; right: 10px; left: 10px; text-align: center; }
         }
 
         @media (min-width: 901px) and (max-width: 1100px) {
-            /* Tablet landscape */
             :root { --sidebar-width: 260px; }
             .form-container { padding: 1.2rem; }
-            div[style*="grid-template-columns: 2fr 1fr"] {
-                grid-template-columns: 1fr !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
+            div[style*="grid-template-columns: 2fr 1fr"] { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; }
         }
     </style>
 </head>
@@ -289,7 +182,10 @@
             <h3>Archivio Cloud</h3>
             <button onclick="pullFromFirebase()" style="font-size:0.7rem; cursor:pointer; background:none; color:white; border:1px solid white; padding:2px 5px; border-radius:3px;">🔄 Sync</button>
         </div>
-        <div style="padding:10px;"><input type="text" id="sidebarSearch" placeholder="Cerca termini o note..." style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;" oninput="refreshSidebar()"></div>
+        <div style="padding:10px;">
+            <input type="text" id="sidebarSearch" placeholder="Cerca termini o note..."
+                   style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;" oninput="refreshSidebar()">
+        </div>
         <div id="archive-list" style="overflow-y:auto; flex:1;"></div>
     </aside>
 
@@ -312,14 +208,16 @@
                 <div>
                     <label class="field-label">Termine Dialettale <span class="dict-icon" onclick="startDict('f_termine')">🎤</span></label>
                     <div class="termine-wrapper">
-                        <input type="text" id="f_termine" class="input-esaltato input-termine" autocomplete="off" oninput="onTermineInput()" onblur="closeTermineSugg()">
+                        <input type="text" id="f_termine" class="input-esaltato input-termine"
+                               autocomplete="off" spellcheck="false"
+                               oninput="onTermineInput()" onblur="closeTermineSugg()">
                         <div id="termine-suggestions"></div>
                     </div>
                     <div id="termine-badge" class="termine-badge">⚠️ Termine già in archivio — clicca per caricarlo</div>
                 </div>
                 <div>
                     <label class="field-label">Note / Legami <span class="dict-icon" onclick="startDict('f_note')">🎤</span></label>
-                    <input type="text" id="f_note" class="input-esaltato">
+                    <input type="text" id="f_note" class="input-esaltato" spellcheck="false">
                 </div>
             </div>
 
@@ -331,10 +229,10 @@
                 <div class="audio-console">
                     <label class="field-label" style="justify-content:center; font-size:0.6rem;">Pronuncia & Trascrizione</label>
                     <div style="display:flex; gap:8px; justify-content:center; margin-top:5px;">
-                        <button id="recBtn" class="btn-audio" style="background:var(--danger);" onclick="startRec()">●</button>
-                        <button id="stopBtn" class="btn-audio" style="background:var(--primary); display:none;" onclick="stopRec()">■</button>
-                        <button id="playBtn" class="btn-audio" style="background:var(--success); opacity:0.3;" onclick="playAudio()">▶</button>
-                        <button id="delAudioBtn" class="btn-audio" style="background:#64748b; opacity:0.3;" onclick="deleteAudio()">🗑</button>
+                        <button id="recBtn"    class="btn-audio" style="background:var(--danger);"           onclick="startRec()">●</button>
+                        <button id="stopBtn"   class="btn-audio" style="background:var(--primary); display:none;" onclick="stopRec()">■</button>
+                        <button id="playBtn"   class="btn-audio" style="background:var(--success); opacity:0.3;" onclick="playAudio()">▶</button>
+                        <button id="delAudioBtn" class="btn-audio" style="background:#64748b; opacity:0.3;"  onclick="deleteAudio()">🗑</button>
                     </div>
                     <div id="audioStatus" style="font-size:0.55rem; margin-top:5px; font-weight:bold;">VUOTO</div>
                 </div>
@@ -343,12 +241,12 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div>
                     <label class="field-label">Sinonimi <span class="dict-icon" onclick="startDict('f_sinonimi')">🎤</span></label>
-                    <input type="text" id="f_sinonimi" class="input-esaltato" oninput="drawChips('sinonimi')">
+                    <input type="text" id="f_sinonimi" class="input-esaltato" spellcheck="false" oninput="drawChips('sinonimi')">
                     <div id="chips-sinonimi" class="chip-container"></div>
                 </div>
                 <div>
                     <label class="field-label">Contrari <span class="dict-icon" onclick="startDict('f_contrari')">🎤</span></label>
-                    <input type="text" id="f_contrari" class="input-esaltato" oninput="drawChips('contrari')">
+                    <input type="text" id="f_contrari" class="input-esaltato" spellcheck="false" oninput="drawChips('contrari')">
                     <div id="chips-contrari" class="chip-container"></div>
                 </div>
             </div>
@@ -356,11 +254,13 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div style="display:flex; flex-direction:column;">
                     <label class="field-label">Esempi Utilizzo <span class="dict-icon" onclick="startDict('f_esempio')">🎤</span></label>
-                    <textarea id="f_esempio" class="input-esaltato" rows="6" placeholder="1. Esempio..." onkeydown="handleNumbering(event)"></textarea>
+                    <textarea id="f_esempio" class="input-esaltato" rows="6" spellcheck="false"
+                              placeholder="1. Esempio..." onkeydown="handleNumbering(event)"></textarea>
                 </div>
                 <div style="display:flex; flex-direction:column;">
                     <label class="field-label">Traduzione Italiano <span class="dict-icon" onclick="startDict('f_traduzione')">🎤</span></label>
-                    <textarea id="f_traduzione" class="input-esaltato" rows="6" placeholder="1. Traduzione..." onkeydown="handleNumbering(event)"></textarea>
+                    <textarea id="f_traduzione" class="input-esaltato" rows="6"
+                              placeholder="1. Traduzione..." onkeydown="handleNumbering(event)"></textarea>
                 </div>
             </div>
         </div>
@@ -370,6 +270,19 @@
 <footer>
     <span>© 2026 - app sviluppata da:</span><span class="footer-name">Michele ing. Altamura</span>
 </footer>
+
+<!-- LOGIN MODAL -->
+<div id="login-modal">
+    <div id="login-box">
+        <h2>Dialettu Ariolisu</h2>
+        <p>Inserisci la password per modificare l'archivio</p>
+        <input type="password" id="login-pwd" placeholder="••••••••"
+               onkeydown="if(event.key==='Enter') doLogin()">
+        <div id="login-error"></div>
+        <button id="login-btn" onclick="doLogin()">🔓 Accedi</button>
+        <div id="login-auth-status">Autenticazione Firebase in corso...</div>
+    </div>
+</div>
 
 <div id="info-modal">
     <div style="background:white; padding:30px; border-radius:12px; max-width:600px; width:90%;">
@@ -383,53 +296,181 @@
 <div id="toast"></div>
 
 <script>
-    // --- TERMINE SEARCH / SEGNALAZIONE ---
+    // =========================================================================
+    // ▼▼▼  CONFIGURAZIONE — modifica solo questa sezione  ▼▼▼
+    // =========================================================================
+
+    // Password di accesso all'app
+    const APP_PASSWORD = "ariolisi2026";
+
+    // UID Firebase Anonymous autorizzato a scrivere su Firestore.
+    // Prima esecuzione: lascia stringa vuota "".
+    // Dopo il primo login, apri la console del browser (F12) e copia l'UID
+    // che appare nel messaggio "Firebase UID: xxxxx".
+    // Poi incollalo qui e aggiorna anche le regole Firestore (vedi istruzioni).
+    const AUTHORIZED_UID = ""; // ← es: "aBcDeFgHiJkLmN012345"
+
+    const firebaseConfig = {
+        apiKey:            "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk",
+        authDomain: "dialettu-ariolisu.firebaseapp.com",
+        projectId: "dialettu-ariolisu",
+        storageBucket: "dialettu-ariolisu.firebasestorage.app",
+        messagingSenderId: "216557717972",
+        appId: "1:216557717972:web:51ab4cdd5c82c071132e41"
+    };
+
+    // =========================================================================
+    // ▲▲▲  FINE CONFIGURAZIONE  ▲▲▲
+    // =========================================================================
+
+    // --- INIT FIREBASE ---
+    firebase.initializeApp(firebaseConfig);
+    const fs   = firebase.firestore();
+    const auth = firebase.auth();
+
+    // --- INIT DEXIE (DB locale) ---
+    const db = new Dexie("DialettiV16_9_4");
+    db.version(1).stores({ termini: "termine, significati, note" });
+
+    let currentAudio   = null;
+    let mediaRecorder, recognition = null;
+    let _authenticated = false;  // password UI superata
+    let _firebaseUser  = null;   // utente Firebase Anonymous corrente
+
+    // =========================================================================
+    // AUTENTICAZIONE ANONIMA FIREBASE
+    // Ogni browser/dispositivo ottiene un UID anonimo persistente in localStorage.
+    // Solo l'UID impostato in AUTHORIZED_UID potrà scrivere su Firestore.
+    // =========================================================================
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            _firebaseUser = user;
+            console.log("Firebase UID:", user.uid);
+            document.getElementById('login-auth-status').innerText =
+                "🔒 Auth OK · UID: " + user.uid;
+        } else {
+            auth.signInAnonymously().catch(err => {
+                console.warn("Auth anonima non disponibile:", err.message);
+                document.getElementById('login-auth-status').innerText =
+                    "⚠️ Auth Firebase non attiva — abilita Anonymous in Console";
+            });
+        }
+    });
+
+    // =========================================================================
+    // LOGIN CON PASSWORD LOCALE
+    // =========================================================================
+    function doLogin() {
+        const pwd = document.getElementById('login-pwd').value;
+        if (pwd === APP_PASSWORD) {
+            _authenticated = true;
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('login-pwd').value = '';
+            // Se AUTHORIZED_UID non è ancora impostato, guida l'utente
+            if (!AUTHORIZED_UID && _firebaseUser) {
+                console.warn(
+                    "─────────────────────────────────────────────\n" +
+                    "AUTHORIZED_UID non impostato.\n" +
+                    "Copia questo UID, incollalo in AUTHORIZED_UID\n" +
+                    "e aggiorna le regole Firestore:\n\n" +
+                    _firebaseUser.uid +
+                    "\n─────────────────────────────────────────────"
+                );
+                showToast("⚠️ Vedi console (F12) per UID Firebase", "#E67E00");
+            }
+        } else {
+            document.getElementById('login-error').innerText = '❌ Password errata';
+            document.getElementById('login-pwd').value = '';
+            setTimeout(() => document.getElementById('login-error').innerText = '', 2500);
+        }
+    }
+
+    function requireAuth(fn) {
+        if (!_authenticated) {
+            showToast("🔒 Accesso richiesto", "var(--danger)");
+            document.getElementById('login-modal').style.display = 'flex';
+            return;
+        }
+        return fn();
+    }
+
+    // =========================================================================
+    // SCRITTURA SU FIREBASE (usa utente anonimo autenticato)
+    // =========================================================================
+    async function cloudSet(docId, data) {
+        if (!navigator.onLine || !_firebaseUser) return;
+        await fs.collection("archivio_ariolisi").doc(docId).set(data);
+    }
+    async function cloudDelete(docId) {
+        if (!navigator.onLine || !_firebaseUser) return;
+        await fs.collection("archivio_ariolisi").doc(docId).delete();
+    }
+
+    // =========================================================================
+    // AVVIO APP
+    // =========================================================================
+    window.onload = async () => {
+        if (navigator.onLine) {
+            document.getElementById('sync-dot').classList.add('status-online');
+            document.getElementById('sync-text').innerText = "Cloud Online";
+        }
+        await refreshSidebar();
+        pullFromFirebase();
+    };
+
+    // =========================================================================
+    // TERMINE SEARCH / SEGNALAZIONE
+    // =========================================================================
     let _suggTimeout = null;
     async function onTermineInput() {
         clearTimeout(_suggTimeout);
-        const val = document.getElementById('f_termine').value.trim();
+        const val   = document.getElementById('f_termine').value.trim();
         const badge = document.getElementById('termine-badge');
         const input = document.getElementById('f_termine');
-        const box = document.getElementById('termine-suggestions');
+        const box   = document.getElementById('termine-suggestions');
 
         if (!val || val.length < 2) {
-            box.style.display = 'none';
-            badge.style.display = 'none';
-            input.classList.remove('termine-exists');
-            return;
+            box.style.display = 'none'; badge.style.display = 'none';
+            input.classList.remove('termine-exists'); return;
         }
         _suggTimeout = setTimeout(async () => {
-            const all = await db.termini.toArray();
-            const exact = all.find(i => i.termine.toLowerCase() === val.toLowerCase());
+            const all     = await db.termini.toArray();
+            const exact   = all.find(i => i.termine.toLowerCase() === val.toLowerCase());
             const matches = all.filter(i =>
-                i.termine.toLowerCase().includes(val.toLowerCase()) && i.termine.toLowerCase() !== val.toLowerCase()
+                i.termine.toLowerCase().includes(val.toLowerCase()) &&
+                i.termine.toLowerCase() !== val.toLowerCase()
             ).slice(0, 6);
 
-            if (exact) {
-                input.classList.add('termine-exists');
-                badge.style.display = 'block';
-            } else {
-                input.classList.remove('termine-exists');
-                badge.style.display = 'none';
-            }
+            if (exact) { input.classList.add('termine-exists'); badge.style.display = 'block'; }
+            else       { input.classList.remove('termine-exists'); badge.style.display = 'none'; }
 
             const items = [];
-            if (exact) items.push(`<div class="sugg-item" onmousedown="loadTerm('${exact.termine.replace(/'/g,"\\'")}')">✏️ <strong>${exact.termine}</strong> <small>Carica scheda esistente</small></div>`);
-            matches.forEach(i => items.push(`<div class="sugg-item" onmousedown="loadTerm('${i.termine.replace(/'/g,"\\'")}')">🔍 ${i.termine} <small>${i.significati?.[0] || ''}</small></div>`));
-
-            if (items.length) {
-                box.innerHTML = items.join('');
-                box.style.display = 'block';
-            } else {
-                box.style.display = 'none';
-            }
+            if (exact) items.push(
+                `<div class="sugg-item"
+                    onmousedown="loadTerm('${exact.termine.replace(/'/g,"\\'")}');return false;"
+                    ontouchstart="loadTerm('${exact.termine.replace(/'/g,"\\'")}');return false;">
+                    ✏️ <strong>${exact.termine}</strong><small>Carica scheda esistente</small>
+                </div>`
+            );
+            matches.forEach(i => items.push(
+                `<div class="sugg-item"
+                    onmousedown="loadTerm('${i.termine.replace(/'/g,"\\'")}');return false;"
+                    ontouchstart="loadTerm('${i.termine.replace(/'/g,"\\'")}');return false;">
+                    🔍 ${i.termine}<small>${i.significati?.[0] || ''}</small>
+                </div>`
+            ));
+            box.innerHTML = items.join('');
+            box.style.display = items.length ? 'block' : 'none';
         }, 200);
     }
+
     function closeTermineSugg() {
-        setTimeout(() => { document.getElementById('termine-suggestions').style.display = 'none'; }, 200);
+        setTimeout(() => { document.getElementById('termine-suggestions').style.display = 'none'; }, 350);
     }
 
-    // --- STAMPA ARCHIVIO COMPLETO ---
+    // =========================================================================
+    // STAMPA ARCHIVIO COMPLETO
+    // =========================================================================
     async function printArchive() {
         const all = await db.termini.toArray();
         if (!all.length) return showToast("Archivio vuoto", "var(--danger)");
@@ -438,10 +479,10 @@
             <div class="print-card">
                 <h2>${i.termine}</h2>
                 ${i.significati?.length ? `<div class="print-row"><span class="print-label">Significati:</span> ${i.significati.join(', ')}</div>` : ''}
-                ${i.sinonimi ? `<div class="print-row"><span class="print-label">Sinonimi:</span> ${i.sinonimi}</div>` : ''}
-                ${i.contrari ? `<div class="print-row"><span class="print-label">Contrari:</span> ${i.contrari}</div>` : ''}
-                ${i.note ? `<div class="print-row"><span class="print-label">Note:</span> ${i.note}</div>` : ''}
-                ${i.esempio ? `<div class="print-row"><span class="print-label">Esempi:</span> ${i.esempio.replace(/\n/g,'<br>')}</div>` : ''}
+                ${i.sinonimi   ? `<div class="print-row"><span class="print-label">Sinonimi:</span> ${i.sinonimi}</div>` : ''}
+                ${i.contrari   ? `<div class="print-row"><span class="print-label">Contrari:</span> ${i.contrari}</div>` : ''}
+                ${i.note       ? `<div class="print-row"><span class="print-label">Note:</span> ${i.note}</div>` : ''}
+                ${i.esempio    ? `<div class="print-row"><span class="print-label">Esempi:</span> ${i.esempio.replace(/\n/g,'<br>')}</div>` : ''}
                 ${i.traduzione ? `<div class="print-row"><span class="print-label">Traduzione:</span> ${i.traduzione.replace(/\n/g,'<br>')}</div>` : ''}
             </div>`).join('');
         document.getElementById('print-archive').innerHTML = `
@@ -451,139 +492,78 @@
         window.print();
     }
 
+    // =========================================================================
+    // SIDEBAR MOBILE
+    // =========================================================================
     function toggleSidebar() {
-        const aside = document.querySelector('aside');
-        const overlay = document.getElementById('sidebar-overlay');
-        aside.classList.toggle('open');
-        overlay.classList.toggle('open');
+        document.querySelector('aside').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('open');
     }
     function closeSidebar() {
         document.querySelector('aside').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('open');
     }
 
-    // --- TUE CHIAVI FIREBASE UFFICIALI ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk",
-        authDomain: "dialettu-ariolisu.firebaseapp.com",
-        projectId: "dialettu-ariolisu",
-        storageBucket: "dialettu-ariolisu.firebasestorage.app",
-        messagingSenderId: "216557717972",
-        appId: "1:216557717972:web:51ab4cdd5c82c071132e41"
-    };
-
-    // Inizializzazione Firebase
-    firebase.initializeApp(firebaseConfig);
-    const fs = firebase.firestore();
-
-    // Database Locale Dexie
-    const db = new Dexie("DialettiV16_9_4");
-    db.version(1).stores({ termini: "termine, significati, note" });
-
-    let currentAudio = null;
-    let mediaRecorder, recognition = null;
-
-    window.onload = async () => {
-        if(navigator.onLine) {
-            document.getElementById('sync-dot').classList.add('status-online');
-            document.getElementById('sync-text').innerText = "Cloud Online";
-        }
-        await refreshSidebar();
-        pullFromFirebase();
-    };
-
-    // ---------------------------------------------------------------------------
-    // IMPORTAZIONE: supporta ENTRAMBI i formati
-    //
-    //  Formato NUOVO (export di questa app):
-    //    Array di oggetti, ogni oggetto ha il campo "termine" dentro di sé:
-    //    [ { termine: "Arviscia", significati: [...], ... }, ... ]
-    //
-    //  Formato VECCHIO (archivi precedenti):
-    //    Oggetto dizionario { chiave = termine, valore = record SENZA campo termine }:
-    //    { "Arviscia": { significati: [...], ... }, "Altro": { ... }, ... }
-    //
-    //  Entrambi vengono normalizzati al formato nuovo prima del salvataggio,
-    //  così l'archivio locale e Firebase rimangono sempre nel formato nuovo.
-    // ---------------------------------------------------------------------------
+    // =========================================================================
+    // IMPORTAZIONE — supporta formato nuovo (array) e vecchio (oggetto)
+    // =========================================================================
     function normalizeImportData(data) {
         let list = [];
-
-        // Formato NUOVO: array di oggetti con campo "termine"
         if (Array.isArray(data)) {
             list = data
                 .filter(item => item && typeof item === 'object' && typeof item.termine === 'string' && item.termine.trim())
                 .map(item => ({
-                    termine:    item.termine.trim(),
-                    note:       item.note       || "",
+                    termine:     item.termine.trim(),
+                    note:        item.note        || "",
                     significati: Array.isArray(item.significati)
                                     ? item.significati
-                                    : (item.significati ? String(item.significati).split(',').map(s => s.trim()) : []),
-                    sinonimi:   item.sinonimi   || "",
-                    contrari:   item.contrari   || "",
-                    esempio:    item.esempio    || "",
-                    traduzione: item.traduzione || "",
-                    audio:      item.audio      || null
+                                    : (item.significati ? String(item.significati).split(',').map(s=>s.trim()) : []),
+                    sinonimi:    item.sinonimi    || "",
+                    contrari:    item.contrari    || "",
+                    esempio:     item.esempio     || "",
+                    traduzione:  item.traduzione  || "",
+                    audio:       item.audio       || null
                 }));
-
-        // Formato VECCHIO: oggetto dizionario { "termine": { ...record senza termine... } }
-        } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+        } else if (data && typeof data === 'object') {
             list = Object.entries(data)
-                .filter(([k, v]) => typeof k === 'string' && k.trim() && v && typeof v === 'object')
+                .filter(([k,v]) => typeof k === 'string' && k.trim() && v && typeof v === 'object')
                 .map(([termine, record]) => ({
-                    termine:    termine.trim(),
-                    note:       record.note       || "",
+                    termine:     termine.trim(),
+                    note:        record.note        || "",
                     significati: Array.isArray(record.significati)
                                     ? record.significati
-                                    : (record.significati ? String(record.significati).split(',').map(s => s.trim()) : []),
-                    sinonimi:   record.sinonimi   || "",
-                    contrari:   record.contrari   || "",
-                    esempio:    record.esempio    || "",
-                    traduzione: record.traduzione || "",
-                    audio:      record.audio      || null
+                                    : (record.significati ? String(record.significati).split(',').map(s=>s.trim()) : []),
+                    sinonimi:    record.sinonimi    || "",
+                    contrari:    record.contrari    || "",
+                    esempio:     record.esempio     || "",
+                    traduzione:  record.traduzione  || "",
+                    audio:       record.audio       || null
                 }));
         }
-
         return list;
     }
 
-    async function processImport(e) {
+    async function processImport(e) { return requireAuth(() => _processImport(e)); }
+    async function _processImport(e) {
         const file = e.target.files[0];
         if (!file) return;
-
-        // Reset input così lo stesso file può essere reimportato
         e.target.value = "";
-
         const r = new FileReader();
         r.onload = async (x) => {
             try {
                 const rawData = JSON.parse(x.target.result);
-                const list = normalizeImportData(rawData);
-
-                if (list.length === 0) {
-                    showToast("⚠️ Nessun termine valido trovato", "var(--danger)");
-                    return;
-                }
-
+                const list    = normalizeImportData(rawData);
+                if (!list.length) return showToast("⚠️ Nessun termine valido trovato", "var(--danger)");
                 showToast(`⏳ Importazione ${list.length} termini...`);
-
-                // Salvataggio locale con bulkPut (transazione atomica, molto più veloce e affidabile)
                 await db.termini.bulkPut(list);
-
-                // Sincronizzazione Cloud (best-effort, errori non bloccanti)
                 if (navigator.onLine) {
                     for (const item of list) {
-                        try {
-                            await fs.collection("archivio_ariolisi").doc(item.termine).set(item);
-                        } catch (err) {
-                            console.warn("Cloud skip:", item.termine, err.message);
-                        }
+                        try { await cloudSet(item.termine, item); }
+                        catch (err) { console.warn("Cloud skip:", item.termine, err.message); }
                     }
                 }
-
                 await refreshSidebar();
                 showToast(`✅ Importati ${list.length} termini`, "var(--success)");
-
             } catch (err) {
                 console.error("Errore importazione:", err);
                 showToast("❌ File JSON non valido o corrotto", "var(--danger)");
@@ -592,35 +572,37 @@
         r.readAsText(file, "UTF-8");
     }
 
-    // --- LOGICHE UI & CORE ---
+    // =========================================================================
+    // LOGICHE UI & CORE
+    // =========================================================================
     async function drawChips(type) {
-        const val = document.getElementById(`f_${type}`).value;
+        const val       = document.getElementById(`f_${type}`).value;
         const container = document.getElementById(`chips-${type}`);
         container.innerHTML = "";
-        if(!val) return;
-        const terms = val.split(',').map(t => t.trim()).filter(t => t);
+        if (!val) return;
+        const terms = val.split(',').map(t=>t.trim()).filter(t=>t);
         for (let t of terms) {
             const exists = await db.termini.get(t);
-            const chip = document.createElement('div');
+            const chip   = document.createElement('div');
             chip.className = `chip ${exists ? '' : 'missing'}`;
             chip.innerHTML = `${t} ${exists ? '🔗' : '❓'}`;
-            if(exists) chip.onclick = () => loadTerm(t);
+            if (exists) chip.onclick = () => loadTerm(t);
             container.appendChild(chip);
         }
     }
 
     function handleNumbering(e) {
-        const el = e.target;
+        const el    = e.target;
         const start = el.selectionStart;
         if (el.value.trim() === "" && e.key.length === 1 && !e.ctrlKey) {
             e.preventDefault(); el.value = "1. " + e.key; return;
         }
         if (e.key === 'Enter') {
             e.preventDefault();
-            const lines = el.value.substring(0, start).split('\n');
+            const lines    = el.value.substring(0, start).split('\n');
             const lastLine = lines[lines.length - 1];
-            const match = lastLine.match(/^(\d+)\./);
-            const next = match ? `\n${parseInt(match[1]) + 1}. ` : "\n";
+            const match    = lastLine.match(/^(\d+)\./);
+            const next     = match ? `\n${parseInt(match[1]) + 1}. ` : "\n";
             el.value = el.value.substring(0, start) + next + el.value.substring(el.selectionEnd);
             el.selectionStart = el.selectionEnd = start + next.length;
         }
@@ -628,13 +610,13 @@
 
     function startDict(id) {
         const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(!Speech) return alert("Browser non supportato");
+        if (!Speech) return alert("Browser non supportato");
         const rec = new Speech(); rec.lang = 'it-IT';
         rec.onresult = e => {
-            const t = e.results[0][0].transcript;
+            const t     = e.results[0][0].transcript;
             const field = document.getElementById(id);
             field.value += (field.value ? " " : "") + t;
-            if(id.includes('sinonimi') || id.includes('contrari')) drawChips(id.split('_')[1]);
+            if (id.includes('sinonimi') || id.includes('contrari')) drawChips(id.split('_')[1]);
         };
         rec.start();
     }
@@ -642,9 +624,9 @@
     async function startRec() {
         const stream = await navigator.mediaDevices.getUserMedia({audio:true});
         mediaRecorder = new MediaRecorder(stream);
-        let chunks = [];
-        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(Speech) {
+        let chunks    = [];
+        const Speech  = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Speech) {
             recognition = new Speech(); recognition.lang = 'it-IT'; recognition.continuous = true;
             recognition.onresult = e => {
                 const t = e.results[e.results.length-1][0].transcript;
@@ -654,94 +636,118 @@
         }
         mediaRecorder.ondataavailable = e => chunks.push(e.data);
         mediaRecorder.onstop = () => {
-            if(recognition) recognition.stop();
+            if (recognition) recognition.stop();
             const b = new Blob(chunks, {type:'audio/webm'});
             const r = new FileReader(); r.readAsDataURL(b);
             r.onloadend = () => { currentAudio = r.result; updateAudioUI(); };
         };
         mediaRecorder.start();
-        document.getElementById('recBtn').style.display='none';
-        document.getElementById('stopBtn').style.display='flex';
+        document.getElementById('recBtn').style.display  = 'none';
+        document.getElementById('stopBtn').style.display = 'flex';
     }
 
-    function stopRec() { if(mediaRecorder) mediaRecorder.stop(); document.getElementById('recBtn').style.display='flex'; document.getElementById('stopBtn').style.display='none'; }
+    function stopRec() {
+        if (mediaRecorder) mediaRecorder.stop();
+        document.getElementById('recBtn').style.display  = 'flex';
+        document.getElementById('stopBtn').style.display = 'none';
+    }
 
-    async function saveToCloud() {
+    async function saveToCloud() { return requireAuth(_saveToCloud); }
+    async function _saveToCloud() {
         const t = document.getElementById('f_termine').value.trim();
-        if(!t) return showToast("Manca il termine!", "var(--danger)");
+        if (!t) return showToast("Manca il termine!", "var(--danger)");
         const data = {
-            termine: t, note: document.getElementById('f_note').value,
+            termine:     t,
+            note:        document.getElementById('f_note').value,
             significati: document.getElementById('f_significato').value.split(',').map(s=>s.trim()),
-            sinonimi: document.getElementById('f_sinonimi').value,
-            contrari: document.getElementById('f_contrari').value,
-            esempio: document.getElementById('f_esempio').value,
-            traduzione: document.getElementById('f_traduzione').value,
-            audio: currentAudio, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            sinonimi:    document.getElementById('f_sinonimi').value,
+            contrari:    document.getElementById('f_contrari').value,
+            esempio:     document.getElementById('f_esempio').value,
+            traduzione:  document.getElementById('f_traduzione').value,
+            audio:       currentAudio,
+            timestamp:   firebase.firestore.FieldValue.serverTimestamp()
         };
         await db.termini.put(data);
-        if(navigator.onLine) await fs.collection("archivio_ariolisi").doc(t).set(data);
-        showToast("✅ Salvato", "var(--success)"); refreshSidebar();
+        try { await cloudSet(t, data); }
+        catch(e) { console.warn("Salvataggio cloud fallito:", e.message); }
+        showToast("✅ Salvato", "var(--success)");
+        refreshSidebar();
     }
 
     async function loadTerm(t) {
         const i = await db.termini.get(t);
-        if(!i) return;
-        document.getElementById('f_termine').value = i.termine;
-        document.getElementById('f_note').value = i.note || "";
+        if (!i) return;
+        document.getElementById('f_termine').value     = i.termine;
+        document.getElementById('f_note').value        = i.note        || "";
         document.getElementById('f_significato').value = i.significati?.join(', ') || "";
-        document.getElementById('f_sinonimi').value = i.sinonimi || "";
-        document.getElementById('f_contrari').value = i.contrari || "";
-        document.getElementById('f_esempio').value = i.esempio || "";
-        document.getElementById('f_traduzione').value = i.traduzione || "";
-        currentAudio = i.audio; updateAudioUI(); drawChips('sinonimi'); drawChips('contrari');
-        // Chiude sidebar e mostra scheda su mobile
-        if (window.innerWidth <= 900) {
-            closeSidebar();
-            document.querySelector('main').scrollTo(0, 0);
-        }
-        // Reset badge/highlight termine
-        document.getElementById('termine-badge').style.display = 'none';
+        document.getElementById('f_sinonimi').value    = i.sinonimi    || "";
+        document.getElementById('f_contrari').value    = i.contrari    || "";
+        document.getElementById('f_esempio').value     = i.esempio     || "";
+        document.getElementById('f_traduzione').value  = i.traduzione  || "";
+        currentAudio = i.audio;
+        updateAudioUI(); drawChips('sinonimi'); drawChips('contrari');
+        if (window.innerWidth <= 900) { closeSidebar(); document.querySelector('main').scrollTo(0,0); }
+        document.getElementById('termine-badge').style.display      = 'none';
         document.getElementById('f_termine').classList.remove('termine-exists');
         document.getElementById('termine-suggestions').style.display = 'none';
     }
 
     async function refreshSidebar() {
-        const list = document.getElementById('archive-list');
+        const list   = document.getElementById('archive-list');
         const search = document.getElementById('sidebarSearch').value.toLowerCase();
-        let all = await db.termini.toArray();
-        if(search) {
+        let all      = await db.termini.toArray();
+        if (search) {
             const fuse = new Fuse(all, { keys: ['termine', 'significati', 'note'] });
             all = fuse.search(search).map(r => r.item);
         }
-        list.innerHTML = all.map(i => `<div class="archive-item" onclick="loadTerm('${i.termine.replace(/'/g, "\\'")}')"><strong>${i.termine}</strong><br><small>${i.significati?.[0] || ''}</small></div>`).join('');
+        list.innerHTML = all.map(i =>
+            `<div class="archive-item" onclick="loadTerm('${i.termine.replace(/'/g,"\\'")}')">
+                <strong>${i.termine}</strong><br>
+                <small>${i.significati?.[0] || ''}</small>
+            </div>`
+        ).join('');
     }
 
-    function deleteAudio() { if(confirm("Eliminare l'audio?")) { currentAudio = null; updateAudioUI(); } }
+    function deleteAudio() { if (confirm("Eliminare l'audio?")) { currentAudio = null; updateAudioUI(); } }
     function updateAudioUI() {
         const has = !!currentAudio;
-        document.getElementById('playBtn').style.opacity = has ? "1" : "0.3";
+        document.getElementById('playBtn').style.opacity     = has ? "1" : "0.3";
         document.getElementById('delAudioBtn').style.opacity = has ? "1" : "0.3";
-        document.getElementById('audioStatus').innerText = has ? "AUDIO OK" : "VUOTO";
+        document.getElementById('audioStatus').innerText     = has ? "AUDIO OK" : "VUOTO";
     }
-    function playAudio() { if(currentAudio) new Audio(currentAudio).play(); }
-    function clearForm() { document.querySelectorAll('input, textarea').forEach(i=>i.value=""); currentAudio = null; updateAudioUI(); document.querySelectorAll('.chip-container').forEach(c=>c.innerHTML=""); }
-    async function deleteEntry() {
+    function playAudio() { if (currentAudio) new Audio(currentAudio).play(); }
+
+    function clearForm() {
+        document.querySelectorAll('input, textarea').forEach(i => i.value = "");
+        currentAudio = null; updateAudioUI();
+        document.querySelectorAll('.chip-container').forEach(c => c.innerHTML = "");
+    }
+
+    async function deleteEntry() { return requireAuth(_deleteEntry); }
+    async function _deleteEntry() {
         const t = document.getElementById('f_termine').value;
-        if(t && confirm(`Eliminare ${t}?`)) {
-            await db.termini.delete(t); await fs.collection("archivio_ariolisi").doc(t).delete();
+        if (t && confirm(`Eliminare ${t}?`)) {
+            await db.termini.delete(t);
+            try { await cloudDelete(t); } catch(e) { console.warn("Delete cloud fallito:", e.message); }
             clearForm(); refreshSidebar();
         }
     }
-    function showInfo() { document.getElementById('info-modal').style.display = 'flex'; }
-    function hideInfo() { document.getElementById('info-modal').style.display = 'none'; }
-    function showToast(m, c="#334155") { const t = document.getElementById('toast'); t.innerText = m; t.style.background = c; t.style.display = "block"; setTimeout(()=>t.style.display="none", 3000); }
 
-    // Esporta SEMPRE nel formato nuovo (array di oggetti con campo termine)
+    function showInfo()  { document.getElementById('info-modal').style.display = 'flex'; }
+    function hideInfo()  { document.getElementById('info-modal').style.display = 'none'; }
+    function showToast(m, c="#334155") {
+        const t = document.getElementById('toast');
+        t.innerText = m; t.style.background = c; t.style.display = "block";
+        setTimeout(() => t.style.display = "none", 3000);
+    }
+
     async function exportBackup() {
-        const all = await db.termini.toArray();
+        const all  = await db.termini.toArray();
         const blob = new Blob([JSON.stringify(all, null, 2)], {type:'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `Archivio_Dialetti_${new Date().toISOString().slice(0,10)}.json`; a.click();
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = `Archivio_Dialetti_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
     }
 
     async function pullFromFirebase() {
@@ -751,7 +757,7 @@
             await db.termini.bulkPut(docs);
             refreshSidebar();
             showToast("Cloud Sincronizzato");
-        } catch (e) { console.log("Errore sync"); }
+        } catch (e) { console.log("Errore sync:", e.message); }
     }
 </script>
 </body>
