@@ -1,1 +1,383 @@
-apiKey: "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk", authDomain: "dialettu-ariolisu.firebaseapp.com", projectId: "dialettu-ariolisu", storageBucket: "dialettu-ariolisu.firebasestorage.app", messagingSenderId: "216557717972", appId: "1:216557717972:web:51ab4cdd5c82c071132e41" };
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialetti Pro V16.9.3 - Full Semantic Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+
+    <style>
+        :root {
+            --bg-page: #f1f5f9; --bg-card: #C5FFF1; --primary: #0f172a; --accent: #2563eb;
+            --border-input: #0000FF; --text-main: #1e293b; --success: #10b981; --danger: #FF0000;
+            --ariolisi-color: #E67E00; --sidebar-width: 350px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-page); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header { background: var(--primary); color: white; padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; z-index: 1000; }
+        .cloud-status { font-size: 0.7rem; display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+        .status-online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+        aside { width: var(--sidebar-width); background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+        .archive-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; }
+        .archive-item:hover { background: var(--primary); color: white; }
+
+        main { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; justify-content: center; }
+        .form-container { background: var(--bg-card); width: 100%; max-width: 1000px; padding: 2rem; border-radius: 12px; height: fit-content; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+        .evidenza-ariolisi { font-family: 'Playfair Display', serif; color: var(--ariolisi-color); font-size: 1.8rem; font-style: italic; font-weight: 700; }
+        .field-label { font-weight: 700; font-size: 0.7rem; color: #0000FF; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .dict-icon { cursor: pointer; font-size: 0.9rem; }
+
+        /* Termine Dialettale: ridotto di 1 punto rispetto alla 16.9.2 (da 1.3rem a 1.2rem) */
+        .input-esaltato { width: 100%; border: 2px solid var(--border-input); border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 1rem; background: white; }
+        .input-termine { font-family: 'Playfair Display'; font-size: 1.2rem; font-weight: 700; }
+        
+        .chip-container { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; min-height: 20px; }
+        .chip { background: var(--primary); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; }
+        .chip.missing { background: #94a3b8; }
+
+        .audio-console { background: rgba(255,255,255,0.5); border: 2px dashed var(--border-input); border-radius: 8px; padding: 10px; text-align: center; }
+        .btn-audio { width: 35px; height: 35px; border-radius: 50%; border: none; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        
+        #toast { position: fixed; bottom: 50px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; display: none; z-index: 9999; }
+        .btn-util { background: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        
+        footer { background: #334155; color: #cbd5e1; text-align: center; padding: 6px; font-size: 0.75rem; border-top: 1px solid var(--ariolisi-color); }
+        .footer-name { font-style: italic; font-weight: 800; color: #ffffff; margin-left: 5px; }
+
+        #info-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 5000; }
+        
+        @media print {
+            aside, header, footer, .nav-btns, .audio-console, .dict-icon, .btn-util, button { display: none !important; }
+            body { background: white; overflow: visible; }
+            .app-container { display: block; }
+            .form-container { box-shadow: none; border: 1px solid #ccc; width: 100%; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div style="font-weight: 800; font-size: 1.1rem;">DIALETTI PRO V16.9.3</div>
+        <div class="cloud-status">
+            <div id="sync-dot" class="status-dot"></div>
+            <span id="sync-text">Offline</span>
+        </div>
+    </div>
+    <div class="nav-btns" style="display:flex; gap:10px;">
+        <button onclick="window.print()" class="btn-util" style="background:var(--accent)">🖨️ Stampa PDF</button>
+        <button onclick="exportBackup()" class="btn-util">📤 Backup JSON</button>
+        <button onclick="document.getElementById('fileImporter').click()" class="btn-util">📥 Importa</button>
+        <input type="file" id="fileImporter" style="display:none" accept=".json" onchange="processImport(event)">
+        <button onclick="showInfo()" class="btn-util" style="border-radius:50%; width:30px; height:30px; padding:0;">i</button>
+    </div>
+</header>
+
+<div class="app-container">
+    <aside>
+        <div style="padding:15px; background:#0f172a; color:white; display:flex; justify-content:space-between; align-items:center;">
+            <h3>Archivio Cloud</h3>
+            <button onclick="pullFromFirebase()" style="font-size:0.7rem; cursor:pointer; background:none; color:white; border:1px solid white; padding:2px 5px; border-radius:3px;">🔄 Sync</button>
+        </div>
+        <div style="padding:10px;"><input type="text" id="sidebarSearch" placeholder="Cerca termini o note..." style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;" oninput="refreshSidebar()"></div>
+        <div id="archive-list" style="overflow-y:auto; flex:1;"></div>
+    </aside>
+
+    <main>
+        <div class="form-container">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+                <div>
+                    <h4 style="color:#0000FF; text-transform:uppercase; font-size:0.7rem;">Scheda Digitale</h4>
+                    <span class="evidenza-ariolisi">Dialettu Ariolisu</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="clearForm()" class="btn-util">Pulisci</button>
+                    <button onclick="deleteEntry()" class="btn-util" style="background:var(--danger)">Elimina</button>
+                    <button onclick="saveToCloud()" style="padding:10px 20px; background:var(--success); color:white; border:none; border-radius:5px; cursor:pointer; font-weight:800;">💾 SALVA SCHEDA</button>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:15px;">
+                <div>
+                    <label class="field-label">Termine Dialettale <span class="dict-icon" onclick="startDict('f_termine')">🎤</span></label>
+                    <input type="text" id="f_termine" class="input-esaltato input-termine">
+                </div>
+                <div>
+                    <label class="field-label">Note / Legami <span class="dict-icon" onclick="startDict('f_note')">🎤</span></label>
+                    <input type="text" id="f_note" class="input-esaltato">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 220px; gap:15px;">
+                <div>
+                    <label class="field-label">Significati <span class="dict-icon" onclick="startDict('f_significato')">🎤</span></label>
+                    <input type="text" id="f_significato" class="input-esaltato">
+                </div>
+                <div class="audio-console">
+                    <label class="field-label" style="justify-content:center; font-size:0.6rem;">Pronuncia & Trascrizione</label>
+                    <div style="display:flex; gap:8px; justify-content:center; margin-top:5px;">
+                        <button id="recBtn" class="btn-audio" style="background:var(--danger);" onclick="startRec()">●</button>
+                        <button id="stopBtn" class="btn-audio" style="background:var(--primary); display:none;" onclick="stopRec()">■</button>
+                        <button id="playBtn" class="btn-audio" style="background:var(--success); opacity:0.3;" onclick="playAudio()">▶</button>
+                        <button id="delAudioBtn" class="btn-audio" style="background:#64748b; opacity:0.3;" onclick="deleteAudio()">🗑</button>
+                    </div>
+                    <div id="audioStatus" style="font-size:0.55rem; margin-top:5px; font-weight:bold;">VUOTO</div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div>
+                    <label class="field-label">Sinonimi <span class="dict-icon" onclick="startDict('f_sinonimi')">🎤</span></label>
+                    <input type="text" id="f_sinonimi" class="input-esaltato" oninput="drawChips('sinonimi')">
+                    <div id="chips-sinonimi" class="chip-container"></div>
+                </div>
+                <div>
+                    <label class="field-label">Contrari <span class="dict-icon" onclick="startDict('f_contrari')">🎤</span></label>
+                    <input type="text" id="f_contrari" class="input-esaltato" oninput="drawChips('contrari')">
+                    <div id="chips-contrari" class="chip-container"></div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div style="display:flex; flex-direction:column;">
+                    <label class="field-label">Esempi Utilizzo <span class="dict-icon" onclick="startDict('f_esempio')">🎤</span></label>
+                    <textarea id="f_esempio" class="input-esaltato" rows="6" placeholder="1. Esempio..." onkeydown="handleNumbering(event)"></textarea>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <label class="field-label">Traduzione Italiano <span class="dict-icon" onclick="startDict('f_traduzione')">🎤</span></label>
+                    <textarea id="f_traduzione" class="input-esaltato" rows="6" placeholder="1. Traduzione..." onkeydown="handleNumbering(event)"></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    <span>© 2026 - app sviluppata da:</span><span class="footer-name">Michele ing. Altamura</span>
+</footer>
+
+<div id="info-modal">
+    <div style="background:white; padding:30px; border-radius:12px; max-width:600px; width:90%;">
+        <h3>Info Progetto Dialettu Ariolisu</h3>
+        <div style="line-height:1.6; font-size:0.9rem; margin:15px 0;">
+            <p>L'iniziativa <strong>“Dialettu Ariolisu”</strong> si configura quale strumento di archiviazione digitale dedicato alla catalogazione e alla preservazione del patrimonio linguistico autoctono.</p>
+            <p style="margin-top:10px;">L’obiettivo è garantire che le radici glottologiche restino un’eredità intellettuale fruibile e accessibile alle generazioni future.</p>
+        </div>
+        <button onclick="hideInfo()" class="btn-util" style="width:100%; background:var(--success); padding:10px;">Ho capito</button>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk", authDomain: "dialettu-ariolisu.firebaseapp.com", projectId: "dialettu-ariolisu", storageBucket: "dialettu-ariolisu.firebasestorage.app", messagingSenderId: "216557717972", appId: "1:216557717972:web:51ab4cdd5c82c071132e41" };
+    firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
+
+    const db = new Dexie("DialettiV16_9_3");
+    db.version(1).stores({ termini: "termine, significati, note" });
+
+    let currentAudio = null;
+    let mediaRecorder, recognition = null;
+
+    window.onload = async () => {
+        if(navigator.onLine) {
+            document.getElementById('sync-dot').classList.add('status-online');
+            document.getElementById('sync-text').innerText = "Cloud Attivo";
+        }
+        await refreshSidebar();
+        pullFromFirebase();
+    };
+
+    async function drawChips(type) {
+        const val = document.getElementById(`f_${type}`).value;
+        const container = document.getElementById(`chips-${type}`);
+        container.innerHTML = "";
+        if(!val) return;
+        const terms = val.split(',').map(t => t.trim()).filter(t => t);
+        for (let t of terms) {
+            const exists = await db.termini.get(t);
+            const chip = document.createElement('div');
+            chip.className = `chip ${exists ? '' : 'missing'}`;
+            chip.innerHTML = `${t} ${exists ? '🔗' : '❓'}`;
+            if(exists) chip.onclick = () => loadTerm(t);
+            container.appendChild(chip);
+        }
+    }
+
+    function handleNumbering(e) {
+        const el = e.target;
+        const start = el.selectionStart;
+        if (el.value.trim() === "" && e.key.length === 1 && !e.ctrlKey) {
+            e.preventDefault(); el.value = "1. " + e.key; return;
+        }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const lines = el.value.substring(0, start).split('\n');
+            const lastLine = lines[lines.length - 1];
+            const match = lastLine.match(/^(\d+)\./);
+            const next = match ? `\n${parseInt(match[1]) + 1}. ` : "\n";
+            el.value = el.value.substring(0, start) + next + el.value.substring(el.selectionEnd);
+            el.selectionStart = el.selectionEnd = start + next.length;
+        }
+    }
+
+    function startDict(id) {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!Speech) return alert("Browser non supportato");
+        const rec = new Speech(); rec.lang = 'it-IT';
+        rec.onresult = e => {
+            const t = e.results[0][0].transcript;
+            const field = document.getElementById(id);
+            field.value += (field.value ? " " : "") + t;
+            if(id.includes('sinonimi') || id.includes('contrari')) drawChips(id.split('_')[1]);
+        };
+        rec.start();
+    }
+
+    async function startRec() {
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        mediaRecorder = new MediaRecorder(stream);
+        let chunks = [];
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(Speech) {
+            recognition = new Speech(); recognition.lang = 'it-IT'; recognition.continuous = true;
+            recognition.onresult = e => {
+                const t = e.results[e.results.length-1][0].transcript;
+                document.getElementById('f_note').value += ` [Vocal: ${t}]`;
+            };
+            recognition.start();
+        }
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            if(recognition) recognition.stop();
+            const b = new Blob(chunks, {type:'audio/webm'});
+            const r = new FileReader(); r.readAsDataURL(b);
+            r.onloadend = () => { currentAudio = r.result; updateAudioUI(); };
+        };
+        mediaRecorder.start();
+        document.getElementById('recBtn').style.display='none';
+        document.getElementById('stopBtn').style.display='flex';
+    }
+
+    function stopRec() { mediaRecorder.stop(); document.getElementById('recBtn').style.display='flex'; document.getElementById('stopBtn').style.display='none'; }
+
+    async function saveToCloud() {
+        const t = document.getElementById('f_termine').value.trim();
+        if(!t) return showToast("Manca il termine!", "var(--danger)");
+        const sigs = document.getElementById('f_significato').value.split(',').map(s=>s.trim());
+        const data = {
+            termine: t, note: document.getElementById('f_note').value,
+            significati: sigs, sinonimi: document.getElementById('f_sinonimi').value,
+            contrari: document.getElementById('f_contrari').value,
+            esempio: document.getElementById('f_esempio').value,
+            traduzione: document.getElementById('f_traduzione').value,
+            audio: currentAudio, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.termini.put(data);
+        if(navigator.onLine) await fs.collection("archivio_ariolisi").doc(t).set(data);
+        showToast("✅ Salvato", "var(--success)"); refreshSidebar();
+    }
+
+    async function loadTerm(t) {
+        const i = await db.termini.get(t);
+        if(!i) return;
+        document.getElementById('f_termine').value = i.termine;
+        document.getElementById('f_note').value = i.note || "";
+        document.getElementById('f_significato').value = i.significati?.join(', ') || "";
+        document.getElementById('f_sinonimi').value = i.sinonimi || "";
+        document.getElementById('f_contrari').value = i.contrari || "";
+        document.getElementById('f_esempio').value = i.esempio || "";
+        document.getElementById('f_traduzione').value = i.traduzione || "";
+        currentAudio = i.audio; updateAudioUI(); drawChips('sinonimi'); drawChips('contrari');
+    }
+
+    async function refreshSidebar() {
+        const list = document.getElementById('archive-list');
+        const search = document.getElementById('sidebarSearch').value.toLowerCase();
+        let all = await db.termini.toArray();
+        if(search) {
+            const fuse = new Fuse(all, { keys: ['termine', 'significati', 'note'] });
+            all = fuse.search(search).map(r => r.item);
+        }
+        list.innerHTML = all.map(i => `<div class="archive-item" onclick="loadTerm('${i.termine}')"><strong>${i.termine}</strong><br><small>${i.significati?.[0] || ''}</small></div>`).join('');
+    }
+
+    function deleteAudio() { if(confirm("Eliminare l'audio?")) { currentAudio = null; updateAudioUI(); } }
+    function updateAudioUI() {
+        const has = !!currentAudio;
+        document.getElementById('playBtn').style.opacity = has ? "1" : "0.3";
+        document.getElementById('delAudioBtn').style.opacity = has ? "1" : "0.3";
+        document.getElementById('audioStatus').innerText = has ? "AUDIO OK" : "VUOTO";
+    }
+    function playAudio() { if(currentAudio) new Audio(currentAudio).play(); }
+    function clearForm() { document.querySelectorAll('input, textarea').forEach(i=>i.value=""); currentAudio = null; updateAudioUI(); document.querySelectorAll('.chip-container').forEach(c=>c.innerHTML=""); }
+    async function deleteEntry() {
+        const t = document.getElementById('f_termine').value;
+        if(t && confirm(`Eliminare ${t}?`)) {
+            await db.termini.delete(t); await fs.collection("archivio_ariolisi").doc(t).delete();
+            clearForm(); refreshSidebar();
+        }
+    }
+    function showInfo() { document.getElementById('info-modal').style.display = 'flex'; }
+    function hideInfo() { document.getElementById('info-modal').style.display = 'none'; }
+    function showToast(m, c="#334155") { const t = document.getElementById('toast'); t.innerText = m; t.style.background = c; t.style.display = "block"; setTimeout(()=>t.style.display="none", 3000); }
+    
+    async function exportBackup() {
+        const all = await db.termini.toArray();
+        const blob = new Blob([JSON.stringify(all, null, 2)], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+    }
+
+    /* FIX IMPORTAZIONE: Gestione formati multipli */
+    function processImport(e) {
+        const r = new FileReader();
+        r.onload = async (x) => {
+            try {
+                const data = JSON.parse(x.target.result);
+                // Converte in array se è un oggetto singolo (formato V26)
+                const list = Array.isArray(data) ? data : Object.values(data);
+                
+                if(confirm(`Importare ${list.length} elementi?`)) {
+                    for(let item of list) {
+                        if(item.termine) {
+                            await db.termini.put(item);
+                            if(navigator.onLine) await fs.collection("archivio_ariolisi").doc(item.termine).set(item);
+                        }
+                    }
+                    refreshSidebar();
+                    showToast("✅ Importazione completata!");
+                }
+            } catch (err) {
+                showToast("❌ Errore nel formato file", "var(--danger)");
+                console.error(err);
+            }
+        };
+        r.readAsText(e.target.files[0]);
+    }
+
+    async function pullFromFirebase() {
+        try {
+            const snap = await fs.collection("archivio_ariolisi").get();
+            const docs = snap.docs.map(doc => doc.data());
+            await db.termini.bulkPut(docs);
+            refreshSidebar();
+            showToast("Sincronizzazione completata");
+        } catch (e) { console.log("Cloud non disponibile"); }
+    }
+</script>
+</body>
+</html>
