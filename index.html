@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dialetti Pro V16.9.3 - Full Semantic Edition</title>
+    <title>Dialetti Pro V16.9.4 - GitHub Live</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -39,7 +39,6 @@
         .field-label { font-weight: 700; font-size: 0.7rem; color: #0000FF; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         .dict-icon { cursor: pointer; font-size: 0.9rem; }
 
-        /* Termine Dialettale: ridotto di 1 punto rispetto alla 16.9.2 (da 1.3rem a 1.2rem) */
         .input-esaltato { width: 100%; border: 2px solid var(--border-input); border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 1rem; background: white; }
         .input-termine { font-family: 'Playfair Display'; font-size: 1.2rem; font-weight: 700; }
         
@@ -70,15 +69,15 @@
 
 <header>
     <div style="display:flex; align-items:center; gap:15px;">
-        <div style="font-weight: 800; font-size: 1.1rem;">DIALETTI PRO V16.9.3</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">DIALETTI PRO V16.9.4</div>
         <div class="cloud-status">
             <div id="sync-dot" class="status-dot"></div>
-            <span id="sync-text">Offline</span>
+            <span id="sync-text">Connessione...</span>
         </div>
     </div>
     <div class="nav-btns" style="display:flex; gap:10px;">
-        <button onclick="window.print()" class="btn-util" style="background:var(--accent)">🖨️ Stampa PDF</button>
-        <button onclick="exportBackup()" class="btn-util">📤 Backup JSON</button>
+        <button onclick="window.print()" class="btn-util" style="background:var(--accent)">🖨️ Stampa</button>
+        <button onclick="exportBackup()" class="btn-util">📤 Backup</button>
         <button onclick="document.getElementById('fileImporter').click()" class="btn-util">📥 Importa</button>
         <input type="file" id="fileImporter" style="display:none" accept=".json" onchange="processImport(event)">
         <button onclick="showInfo()" class="btn-util" style="border-radius:50%; width:30px; height:30px; padding:0;">i</button>
@@ -171,22 +170,30 @@
 <div id="info-modal">
     <div style="background:white; padding:30px; border-radius:12px; max-width:600px; width:90%;">
         <h3>Info Progetto Dialettu Ariolisu</h3>
-        <div style="line-height:1.6; font-size:0.9rem; margin:15px 0;">
-            <p>L'iniziativa <strong>“Dialettu Ariolisu”</strong> si configura quale strumento di archiviazione digitale dedicato alla catalogazione e alla preservazione del patrimonio linguistico autoctono.</p>
-            <p style="margin-top:10px;">L’obiettivo è garantire che le radici glottologiche restino un’eredità intellettuale fruibile e accessibile alle generazioni future.</p>
-        </div>
-        <button onclick="hideInfo()" class="btn-util" style="width:100%; background:var(--success); padding:10px;">Ho capito</button>
+        <p>Strumento per la preservazione del patrimonio linguistico autoctono.</p>
+        <button onclick="hideInfo()" class="btn-util" style="width:100%; background:var(--success); padding:10px; margin-top:15px;">Ho capito</button>
     </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk", authDomain: "dialettu-ariolisu.firebaseapp.com", projectId: "dialettu-ariolisu", storageBucket: "dialettu-ariolisu.firebasestorage.app", messagingSenderId: "216557717972", appId: "1:216557717972:web:51ab4cdd5c82c071132e41" };
+    // --- TUE CHIAVI FIREBASE UFFICIALI ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk",
+        authDomain: "dialettu-ariolisu.firebaseapp.com",
+        projectId: "dialettu-ariolisu",
+        storageBucket: "dialettu-ariolisu.firebasestorage.app",
+        messagingSenderId: "216557717972",
+        appId: "1:216557717972:web:51ab4cdd5c82c071132e41"
+    };
+
+    // Inizializzazione Firebase
     firebase.initializeApp(firebaseConfig);
     const fs = firebase.firestore();
 
-    const db = new Dexie("DialettiV16_9_3");
+    // Database Locale Dexie
+    const db = new Dexie("DialettiV16_9_4");
     db.version(1).stores({ termini: "termine, significati, note" });
 
     let currentAudio = null;
@@ -195,12 +202,40 @@
     window.onload = async () => {
         if(navigator.onLine) {
             document.getElementById('sync-dot').classList.add('status-online');
-            document.getElementById('sync-text').innerText = "Cloud Attivo";
+            document.getElementById('sync-text').innerText = "Cloud Online";
         }
         await refreshSidebar();
         pullFromFirebase();
     };
 
+    // --- FUNZIONE IMPORTAZIONE CORRETTA ---
+    function processImport(e) {
+        const r = new FileReader();
+        r.onload = async (x) => {
+            try {
+                const data = JSON.parse(x.target.result);
+                // Gestisce sia array che oggetti (formato V26)
+                const list = Array.isArray(data) ? data : Object.values(data);
+                
+                showToast(`Importazione di ${list.length} elementi...`);
+                for(let item of list) {
+                    if(item.termine) {
+                        await db.termini.put(item);
+                        if(navigator.onLine) {
+                            await fs.collection("archivio_ariolisi").doc(item.termine).set(item).catch(err => console.log("Errore Cloud su:", item.termine));
+                        }
+                    }
+                }
+                await refreshSidebar();
+                showToast("✅ Importazione completata!");
+            } catch (err) {
+                showToast("❌ Errore file JSON", "var(--danger)");
+            }
+        };
+        r.readAsText(e.target.files[0]);
+    }
+
+    // --- LOGICHE UI & CORE ---
     async function drawChips(type) {
         const val = document.getElementById(`f_${type}`).value;
         const container = document.getElementById(`chips-${type}`);
@@ -272,15 +307,15 @@
         document.getElementById('stopBtn').style.display='flex';
     }
 
-    function stopRec() { mediaRecorder.stop(); document.getElementById('recBtn').style.display='flex'; document.getElementById('stopBtn').style.display='none'; }
+    function stopRec() { if(mediaRecorder) mediaRecorder.stop(); document.getElementById('recBtn').style.display='flex'; document.getElementById('stopBtn').style.display='none'; }
 
     async function saveToCloud() {
         const t = document.getElementById('f_termine').value.trim();
         if(!t) return showToast("Manca il termine!", "var(--danger)");
-        const sigs = document.getElementById('f_significato').value.split(',').map(s=>s.trim());
         const data = {
             termine: t, note: document.getElementById('f_note').value,
-            significati: sigs, sinonimi: document.getElementById('f_sinonimi').value,
+            significati: document.getElementById('f_significato').value.split(',').map(s=>s.trim()),
+            sinonimi: document.getElementById('f_sinonimi').value,
             contrari: document.getElementById('f_contrari').value,
             esempio: document.getElementById('f_esempio').value,
             traduzione: document.getElementById('f_traduzione').value,
@@ -334,49 +369,20 @@
     function showInfo() { document.getElementById('info-modal').style.display = 'flex'; }
     function hideInfo() { document.getElementById('info-modal').style.display = 'none'; }
     function showToast(m, c="#334155") { const t = document.getElementById('toast'); t.innerText = m; t.style.background = c; t.style.display = "block"; setTimeout(()=>t.style.display="none", 3000); }
-    
     async function exportBackup() {
         const all = await db.termini.toArray();
         const blob = new Blob([JSON.stringify(all, null, 2)], {type:'application/json'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = `Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
     }
-
-    /* FIX IMPORTAZIONE: Gestione formati multipli */
-    function processImport(e) {
-        const r = new FileReader();
-        r.onload = async (x) => {
-            try {
-                const data = JSON.parse(x.target.result);
-                // Converte in array se è un oggetto singolo (formato V26)
-                const list = Array.isArray(data) ? data : Object.values(data);
-                
-                if(confirm(`Importare ${list.length} elementi?`)) {
-                    for(let item of list) {
-                        if(item.termine) {
-                            await db.termini.put(item);
-                            if(navigator.onLine) await fs.collection("archivio_ariolisi").doc(item.termine).set(item);
-                        }
-                    }
-                    refreshSidebar();
-                    showToast("✅ Importazione completata!");
-                }
-            } catch (err) {
-                showToast("❌ Errore nel formato file", "var(--danger)");
-                console.error(err);
-            }
-        };
-        r.readAsText(e.target.files[0]);
-    }
-
     async function pullFromFirebase() {
         try {
             const snap = await fs.collection("archivio_ariolisi").get();
             const docs = snap.docs.map(doc => doc.data());
             await db.termini.bulkPut(docs);
             refreshSidebar();
-            showToast("Sincronizzazione completata");
-        } catch (e) { console.log("Cloud non disponibile"); }
+            showToast("Cloud Sincronizzato");
+        } catch (e) { console.log("Errore sync"); }
     }
 </script>
 </body>
