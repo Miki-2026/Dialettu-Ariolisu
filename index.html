@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -57,6 +58,71 @@
 
         #info-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 5000; }
         
+        /* === TERMINE SEARCH DROPDOWN === */
+        .termine-wrapper { position: relative; }
+        #termine-suggestions {
+            position: absolute;
+            top: 100%; left: 0; right: 0;
+            background: white;
+            border: 2px solid var(--accent);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 200;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+        .sugg-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+        .sugg-item:hover { background: var(--accent); color: white; }
+        .sugg-item small { opacity: 0.7; font-size: 0.75rem; display: block; }
+        #f_termine.termine-exists { border-color: var(--ariolisi-color); background: #fff8f0; }
+        .termine-badge {
+            display: none;
+            font-size: 0.65rem;
+            color: var(--ariolisi-color);
+            font-weight: 700;
+            margin-top: -8px;
+            margin-bottom: 6px;
+        }
+
+        /* === STAMPA ARCHIVIO COMPLETO === */
+        #print-archive { display: none; }
+        @media print {
+            body > *:not(#print-archive) { display: none !important; }
+            #print-archive {
+                display: block !important;
+                font-family: 'Inter', sans-serif;
+                padding: 20px;
+                background: white;
+            }
+            #print-archive h1 { font-family: 'Playfair Display', serif; color: #E67E00; font-size: 1.8rem; margin-bottom: 4px; }
+            #print-archive .print-meta { font-size: 0.75rem; color: #64748b; margin-bottom: 20px; }
+            .print-card {
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 14px 18px;
+                margin-bottom: 14px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .print-card h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 6px; }
+            .print-card .print-row { font-size: 0.82rem; margin-bottom: 3px; }
+            .print-card .print-label { font-weight: 700; color: #0000FF; text-transform: uppercase; font-size: 0.68rem; }
+        }
+
+        /* === MOBILE: nascondi stampa nell'header, mostra nel menu azioni === */
+        @media (max-width: 900px) {
+            .btn-stampa-header { display: none !important; }
+            .btn-stampa-form { display: inline-block !important; }
+        }
+        .btn-stampa-form { display: none; }
+
         @media print {
             aside, header, footer, .nav-btns, .audio-console, .dict-icon, .btn-util, button { display: none !important; }
             body { background: white; overflow: visible; }
@@ -207,7 +273,7 @@
         </div>
     </div>
     <div class="nav-btns" style="display:flex; gap:10px;">
-        <button onclick="window.print()" class="btn-util" style="background:var(--accent)">🖨️ Stampa</button>
+        <button onclick="printArchive()" class="btn-util btn-stampa-header" style="background:var(--accent)">🖨️ Stampa</button>
         <button onclick="exportBackup()" class="btn-util">📤 Backup</button>
         <button onclick="document.getElementById('fileImporter').click()" class="btn-util">📥 Importa</button>
         <input type="file" id="fileImporter" style="display:none" accept=".json" onchange="processImport(event)">
@@ -237,6 +303,7 @@
                 <div style="display:flex; gap:8px;">
                     <button onclick="clearForm()" class="btn-util">Pulisci</button>
                     <button onclick="deleteEntry()" class="btn-util" style="background:var(--danger)">Elimina</button>
+                    <button onclick="printArchive()" class="btn-util btn-stampa-form" style="background:var(--accent)">🖨️</button>
                     <button onclick="saveToCloud()" style="padding:10px 20px; background:var(--success); color:white; border:none; border-radius:5px; cursor:pointer; font-weight:800;">💾 SALVA SCHEDA</button>
                 </div>
             </div>
@@ -244,7 +311,11 @@
             <div style="display:grid; grid-template-columns: 2fr 1fr; gap:15px;">
                 <div>
                     <label class="field-label">Termine Dialettale <span class="dict-icon" onclick="startDict('f_termine')">🎤</span></label>
-                    <input type="text" id="f_termine" class="input-esaltato input-termine">
+                    <div class="termine-wrapper">
+                        <input type="text" id="f_termine" class="input-esaltato input-termine" autocomplete="off" oninput="onTermineInput()" onblur="closeTermineSugg()">
+                        <div id="termine-suggestions"></div>
+                    </div>
+                    <div id="termine-badge" class="termine-badge">⚠️ Termine già in archivio — clicca per caricarlo</div>
                 </div>
                 <div>
                     <label class="field-label">Note / Legami <span class="dict-icon" onclick="startDict('f_note')">🎤</span></label>
@@ -308,9 +379,78 @@
     </div>
 </div>
 
+<div id="print-archive"></div>
 <div id="toast"></div>
 
 <script>
+    // --- TERMINE SEARCH / SEGNALAZIONE ---
+    let _suggTimeout = null;
+    async function onTermineInput() {
+        clearTimeout(_suggTimeout);
+        const val = document.getElementById('f_termine').value.trim();
+        const badge = document.getElementById('termine-badge');
+        const input = document.getElementById('f_termine');
+        const box = document.getElementById('termine-suggestions');
+
+        if (!val || val.length < 2) {
+            box.style.display = 'none';
+            badge.style.display = 'none';
+            input.classList.remove('termine-exists');
+            return;
+        }
+        _suggTimeout = setTimeout(async () => {
+            const all = await db.termini.toArray();
+            const exact = all.find(i => i.termine.toLowerCase() === val.toLowerCase());
+            const matches = all.filter(i =>
+                i.termine.toLowerCase().includes(val.toLowerCase()) && i.termine.toLowerCase() !== val.toLowerCase()
+            ).slice(0, 6);
+
+            if (exact) {
+                input.classList.add('termine-exists');
+                badge.style.display = 'block';
+            } else {
+                input.classList.remove('termine-exists');
+                badge.style.display = 'none';
+            }
+
+            const items = [];
+            if (exact) items.push(`<div class="sugg-item" onmousedown="loadTerm('${exact.termine.replace(/'/g,"\\'")}')">✏️ <strong>${exact.termine}</strong> <small>Carica scheda esistente</small></div>`);
+            matches.forEach(i => items.push(`<div class="sugg-item" onmousedown="loadTerm('${i.termine.replace(/'/g,"\\'")}')">🔍 ${i.termine} <small>${i.significati?.[0] || ''}</small></div>`));
+
+            if (items.length) {
+                box.innerHTML = items.join('');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }, 200);
+    }
+    function closeTermineSugg() {
+        setTimeout(() => { document.getElementById('termine-suggestions').style.display = 'none'; }, 200);
+    }
+
+    // --- STAMPA ARCHIVIO COMPLETO ---
+    async function printArchive() {
+        const all = await db.termini.toArray();
+        if (!all.length) return showToast("Archivio vuoto", "var(--danger)");
+        const now = new Date().toLocaleDateString('it-IT', { year:'numeric', month:'long', day:'numeric' });
+        const cards = all.sort((a,b) => a.termine.localeCompare(b.termine)).map(i => `
+            <div class="print-card">
+                <h2>${i.termine}</h2>
+                ${i.significati?.length ? `<div class="print-row"><span class="print-label">Significati:</span> ${i.significati.join(', ')}</div>` : ''}
+                ${i.sinonimi ? `<div class="print-row"><span class="print-label">Sinonimi:</span> ${i.sinonimi}</div>` : ''}
+                ${i.contrari ? `<div class="print-row"><span class="print-label">Contrari:</span> ${i.contrari}</div>` : ''}
+                ${i.note ? `<div class="print-row"><span class="print-label">Note:</span> ${i.note}</div>` : ''}
+                ${i.esempio ? `<div class="print-row"><span class="print-label">Esempi:</span> ${i.esempio.replace(/\n/g,'<br>')}</div>` : ''}
+                ${i.traduzione ? `<div class="print-row"><span class="print-label">Traduzione:</span> ${i.traduzione.replace(/\n/g,'<br>')}</div>` : ''}
+            </div>`).join('');
+        document.getElementById('print-archive').innerHTML = `
+            <h1>Dialettu Ariolisu</h1>
+            <div class="print-meta">Archivio completo · ${all.length} termini · Stampato il ${now}</div>
+            ${cards}`;
+        window.print();
+    }
+
     function toggleSidebar() {
         const aside = document.querySelector('aside');
         const overlay = document.getElementById('sidebar-overlay');
@@ -554,6 +694,15 @@
         document.getElementById('f_esempio').value = i.esempio || "";
         document.getElementById('f_traduzione').value = i.traduzione || "";
         currentAudio = i.audio; updateAudioUI(); drawChips('sinonimi'); drawChips('contrari');
+        // Chiude sidebar e mostra scheda su mobile
+        if (window.innerWidth <= 900) {
+            closeSidebar();
+            document.querySelector('main').scrollTo(0, 0);
+        }
+        // Reset badge/highlight termine
+        document.getElementById('termine-badge').style.display = 'none';
+        document.getElementById('f_termine').classList.remove('termine-exists');
+        document.getElementById('termine-suggestions').style.display = 'none';
     }
 
     async function refreshSidebar() {
