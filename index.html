@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dialetti Pro V16.9.5 - GitHub Live</title>
+    <title>Dialetti Pro V17.0.0 - GitHub Live</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -199,6 +199,125 @@
         .btn-util:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* ================================================================
+           DIFFICOLTÀ — SELETTORI A 3 PULSANTI
+        ================================================================ */
+        .diff-group {
+            display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+        }
+        .diff-btn {
+            flex: 1; min-width: 70px; min-height: 44px;
+            border: 2px solid transparent; border-radius: 8px;
+            font-size: 0.72rem; font-weight: 800; cursor: pointer;
+            transition: all 0.18s; text-transform: uppercase;
+            letter-spacing: 0.5px; background: #f1f5f9; color: #64748b;
+        }
+        .diff-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .diff-btn.active-alto  { background:#fee2e2; color:#dc2626; border-color:#dc2626; }
+        .diff-btn.active-medio { background:#fef9c3; color:#b45309; border-color:#d97706; }
+        .diff-btn.active-basso { background:#dcfce7; color:#15803d; border-color:#16a34a; }
+        .diff-btn:not(:disabled):not(.active-alto):not(.active-medio):not(.active-basso):hover {
+            background: #e2e8f0; color: #334155;
+        }
+        .diff-badge { display:inline-block; padding:2px 9px; border-radius:10px;
+            font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; }
+        .diff-badge.alto  { background:#fee2e2; color:#dc2626; }
+        .diff-badge.medio { background:#fef9c3; color:#b45309; }
+        .diff-badge.basso { background:#dcfce7; color:#15803d; }
+        .diff-badge.nc    { background:#f1f5f9; color:#94a3b8; }
+
+        /* ================================================================
+           FILTRI DIFFICOLTÀ NELLA SIDEBAR
+        ================================================================ */
+        .sidebar-filters {
+            padding: 10px 12px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;
+        }
+        .sidebar-filters summary {
+            font-size: 0.68rem; font-weight: 800; color: #334155;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            cursor: pointer; user-select: none; list-style: none;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sidebar-filters summary::-webkit-details-marker { display: none; }
+        .filter-section-label { font-size:0.6rem; font-weight:700; color:#64748b; text-transform:uppercase; margin:8px 0 4px; }
+        .filter-chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:4px; }
+        .filter-chip {
+            padding:4px 10px; border-radius:12px; font-size:0.68rem; font-weight:700;
+            cursor:pointer; border:2px solid transparent; transition:all 0.15s;
+            background:#e2e8f0; color:#64748b;
+        }
+        .filter-chip.chip-alto.active  { background:#fee2e2; color:#dc2626; border-color:#dc2626; }
+        .filter-chip.chip-medio.active { background:#fef9c3; color:#b45309; border-color:#d97706; }
+        .filter-chip.chip-basso.active { background:#dcfce7; color:#15803d; border-color:#16a34a; }
+        .filter-chip.chip-nc.active    { background:#f1f5f9; color:#475569; border-color:#94a3b8; }
+        .filter-chip:hover { opacity: 0.8; }
+        .filter-reset { font-size:0.62rem; color:#94a3b8; cursor:pointer; text-decoration:underline; margin-top:4px; display:inline-block; }
+
+        /* ================================================================
+           MODALE STATISTICHE
+        ================================================================ */
+        #stats-modal {
+            position:fixed; inset:0; background:rgba(0,0,0,0.6);
+            display:none; justify-content:center; align-items:center;
+            z-index:5000; padding:1rem;
+        }
+        #stats-modal.open { display:flex; }
+        .stats-box {
+            background:white; border-radius:14px; width:min(560px, 96vw);
+            max-height:90vh; overflow-y:auto; padding:1.5rem;
+            box-shadow:0 20px 60px rgba(0,0,0,0.3);
+        }
+        .stats-title {
+            font-family:'Playfair Display',serif; color:var(--ariolisi-color);
+            font-size:1.4rem; font-style:italic; font-weight:700;
+            margin-bottom:1.2rem; border-bottom:2px solid var(--ariolisi-color); padding-bottom:0.5rem;
+        }
+        .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1.2rem; }
+        .stat-card {
+            background:#f8fafc; border-radius:10px; padding:12px 14px;
+            display:flex; flex-direction:column; gap:3px;
+        }
+        .stat-card.full { grid-column:1/-1; }
+        .stat-icon { font-size:1.2rem; }
+        .stat-value { font-size:1.6rem; font-weight:800; color:var(--primary); line-height:1; }
+        .stat-label { font-size:0.65rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; }
+        .stat-card.danger  { background:#fff5f5; }
+        .stat-card.success { background:#f0fdf4; }
+        .stat-card.warn    { background:#fffbeb; }
+        .stats-section-title { font-size:0.68rem; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.8px; margin:0.8rem 0 0.5rem; }
+        .stats-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:0.78rem; }
+        .stats-bar-label { width:130px; flex-shrink:0; color:#475569; font-size:0.72rem; }
+        .stats-bar-track { flex:1; height:10px; background:#e2e8f0; border-radius:5px; overflow:hidden; }
+        .stats-bar-fill { height:100%; border-radius:5px; transition:width 0.5s; }
+        .bar-alto  { background:#dc2626; }
+        .bar-medio { background:#d97706; }
+        .bar-basso { background:#16a34a; }
+        .bar-nc    { background:#94a3b8; }
+        .stats-bar-count { font-weight:700; color:#334155; font-size:0.72rem; min-width:24px; text-align:right; }
+        .nc-list { max-height:180px; overflow-y:auto; background:#f8fafc; border-radius:8px; padding:8px; margin-top:6px; }
+        .nc-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:5px 6px; border-radius:5px; cursor:pointer; font-size:0.8rem; transition:background 0.15s;
+        }
+        .nc-item:hover { background:var(--primary); color:white; }
+        .nc-item:hover .nc-classify-hint { color:rgba(255,255,255,0.8); }
+        .nc-classify-hint { font-size:0.62rem; color:#94a3b8; }
+
+        /* ================================================================
+           STAMPA — badge difficoltà
+        ================================================================ */
+        @media print {
+            .print-diff-badges { margin-top:4px; display:flex; gap:6px; flex-wrap:wrap; }
+            .print-diff-badge {
+                display:inline-block; padding:1px 7px; border-radius:8px;
+                font-size:0.6rem; font-weight:800; text-transform:uppercase; border:1px solid currentColor;
+            }
+            .pdb-alto  { color:#dc2626; }
+            .pdb-medio { color:#b45309; }
+            .pdb-basso { color:#15803d; }
+            .pdb-nc    { color:#94a3b8; }
+        }
+
+                /* ================================================================
            FOOTER
         ================================================================ */
         footer {
@@ -434,7 +553,7 @@
 <header>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <button class="sidebar-toggle" onclick="toggleSidebar()" title="Apri archivio">☰</button>
-        <div style="font-weight:800; font-size:1.1rem;">DIALETTI PRO V16.9.5</div>
+        <div style="font-weight:800; font-size:1.1rem;">DIALETTI PRO V17.0.0</div>
         <div class="cloud-status">
             <div id="sync-dot" class="status-dot"></div>
             <span id="sync-text">Connessione...</span>
@@ -443,6 +562,7 @@
     </div>
     <div class="nav-btns" style="display:flex; gap:10px;">
         <button onclick="printArchive()" class="btn-util btn-stampa-header" style="background:var(--accent)">🖨️ Stampa</button>
+        <button onclick="showStats()" class="btn-util" style="background:#7c3aed;">📊 Statistiche</button>
         <button onclick="exportBackup()" class="btn-util">📤 Backup</button>
         <button id="btn-importa" onclick="document.getElementById('fileImporter').click()" class="btn-util" disabled>📥 Importa</button>
         <input type="file" id="fileImporter" style="display:none" accept=".json" onchange="processImport(event)">
@@ -466,6 +586,26 @@
                    style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;"
                    oninput="refreshSidebar()">
         </div>
+        <!-- FILTRI DIFFICOLTÀ -->
+        <details class="sidebar-filters" id="filter-details">
+            <summary>🎯 Filtri Difficoltà <span id="filter-active-count" style="background:var(--ariolisi-color);color:white;border-radius:8px;padding:1px 6px;font-size:0.6rem;display:none;">0</span> <span>▾</span></summary>
+            <div class="filter-section-label">Linguistica / Pronuncia</div>
+            <div class="filter-chips">
+                <div class="filter-chip chip-alto"  onclick="toggleFilter('ling','alto')"  id="fc-ling-alto">🔴 Alto</div>
+                <div class="filter-chip chip-medio" onclick="toggleFilter('ling','medio')" id="fc-ling-medio">🟡 Medio</div>
+                <div class="filter-chip chip-basso" onclick="toggleFilter('ling','basso')" id="fc-ling-basso">🟢 Basso</div>
+                <div class="filter-chip chip-nc"    onclick="toggleFilter('ling','nc')"    id="fc-ling-nc">⬜ N/C</div>
+            </div>
+            <div class="filter-section-label">Traduzione / Interpretazione</div>
+            <div class="filter-chips">
+                <div class="filter-chip chip-alto"  onclick="toggleFilter('trad','alto')"  id="fc-trad-alto">🔴 Alto</div>
+                <div class="filter-chip chip-medio" onclick="toggleFilter('trad','medio')" id="fc-trad-medio">🟡 Medio</div>
+                <div class="filter-chip chip-basso" onclick="toggleFilter('trad','basso')" id="fc-trad-basso">🟢 Basso</div>
+                <div class="filter-chip chip-nc"    onclick="toggleFilter('trad','nc')"    id="fc-trad-nc">⬜ N/C</div>
+            </div>
+            <span class="filter-reset" onclick="resetFilters()">✕ Azzera filtri</span>
+        </details>
+
         <div id="archive-list" style="overflow-y:auto; flex:1;"></div>
     </aside>
 
@@ -480,6 +620,7 @@
                     <button id="btn-pulisci" onclick="clearForm()" class="btn-util" disabled>Pulisci</button>
                     <button id="btn-elimina" onclick="deleteEntry()" class="btn-util" style="background:var(--danger)" disabled>Elimina</button>
                     <button onclick="printArchive()" class="btn-util btn-stampa-form" style="background:var(--accent)">🖨️</button>
+                    <button onclick="showStats()" class="btn-util" style="background:#7c3aed;">📊</button>
                     <button id="btn-salva" onclick="saveToCloud()" style="padding:10px 20px; background:var(--success); color:white; border:none; border-radius:5px; cursor:pointer; font-weight:800;" disabled>💾 SALVA SCHEDA</button>
                 </div>
             </div>
@@ -541,6 +682,28 @@
                     <label class="field-label">Traduzione Italiano <span class="dict-icon" id="mic-traduzione" onclick="startDict('f_traduzione')" style="display:none">🎤</span></label>
                     <textarea id="f_traduzione" class="input-esaltato" rows="6"
                               placeholder="1. Traduzione..." onkeydown="handleNumbering(event)" disabled></textarea>
+                </div>
+            </div>
+
+            <!-- SEZIONE DIFFICOLTÀ -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:10px;">
+                <div>
+                    <label class="field-label">Difficoltà Linguistica / Pronuncia</label>
+                    <div class="diff-group" id="diff-ling-group">
+                        <button class="diff-btn" id="diff-ling-alto"  onclick="setDiff('ling','alto')"  disabled>🔴 Alto</button>
+                        <button class="diff-btn" id="diff-ling-medio" onclick="setDiff('ling','medio')" disabled>🟡 Medio</button>
+                        <button class="diff-btn" id="diff-ling-basso" onclick="setDiff('ling','basso')" disabled>🟢 Basso</button>
+                    </div>
+                    <div id="diff-ling-badge-wrap"></div>
+                </div>
+                <div>
+                    <label class="field-label">Difficoltà Traduzione / Interpretazione</label>
+                    <div class="diff-group" id="diff-trad-group">
+                        <button class="diff-btn" id="diff-trad-alto"  onclick="setDiff('trad','alto')"  disabled>🔴 Alto</button>
+                        <button class="diff-btn" id="diff-trad-medio" onclick="setDiff('trad','medio')" disabled>🟡 Medio</button>
+                        <button class="diff-btn" id="diff-trad-basso" onclick="setDiff('trad','basso')" disabled>🟢 Basso</button>
+                    </div>
+                    <div id="diff-trad-badge-wrap"></div>
                 </div>
             </div>
         </div>
@@ -626,6 +789,7 @@
         storageBucket: "dialettu-ariolisu.firebasestorage.app",
         messagingSenderId: "216557717972",
         appId: "1:216557717972:web:51ab4cdd5c82c071132e41"
+
     };
 
     // ================================================================
@@ -638,8 +802,9 @@
     const auth = firebase.auth();
 
     // --- INIT DEXIE (DB locale) ---
-    const db = new Dexie("DialettiV16_9_4");
+    const db = new Dexie("DialettiV17_0_0");
     db.version(1).stores({ termini: "termine, significati, note" });
+    db.version(2).stores({ termini: "termine, significati, note, diff_linguistica, diff_traduzione" });
 
     // --- STATO GLOBALE ---
     let currentAudio  = null;
@@ -647,6 +812,13 @@
     let recognition   = null;
     let _isEditMode   = false;   // true = utente loggato con Firebase Email/Password
     let _selectedMode = 'read';  // 'read' | 'edit' — scelta corrente nella maschera
+
+    // Difficoltà correnti nella scheda aperta
+    let _diffLing = null;  // 'alto'|'medio'|'basso'|null
+    let _diffTrad = null;
+
+    // Stato filtri sidebar (set di valori attivi, null = nessun filtro)
+    const _filters = { ling: new Set(), trad: new Set() };
 
     // ================================================================
     // MASCHERA ACCESSO — LOGICA
@@ -759,6 +931,15 @@
         // Pulsanti audio
         document.getElementById('recBtn').disabled     = !editMode;
         document.getElementById('delAudioBtn').disabled = !editMode;
+
+        // Pulsanti difficoltà
+        ['ling','trad'].forEach(cat => {
+            ['alto','medio','basso'].forEach(lv => {
+                const btn = document.getElementById(`diff-${cat}-${lv}`);
+                if (btn) btn.disabled = !editMode;
+            });
+        });
+        renderDiffBadges();
 
         // Indicatore online/offline
         if (navigator.onLine) {
@@ -895,6 +1076,10 @@
                 ${i.note       ? `<div class="print-row"><span class="print-label">Note:</span> ${i.note}</div>` : ''}
                 ${i.esempio    ? `<div class="print-row"><span class="print-label">Esempi:</span> ${i.esempio.replace(/\n/g,'<br>')}</div>` : ''}
                 ${i.traduzione ? `<div class="print-row"><span class="print-label">Traduzione:</span> ${i.traduzione.replace(/\n/g,'<br>')}</div>` : ''}
+                <div class="print-diff-badges">
+                    ${_printDiffBadge(i.diff_linguistica, 'Ling.')}
+                    ${_printDiffBadge(i.diff_traduzione,  'Trad.')}
+                </div>
             </div>`).join('');
         document.getElementById('print-archive').innerHTML = `
             <h1>Dialettu Ariolisu</h1>
@@ -933,22 +1118,26 @@
                     contrari:    item.contrari    || "",
                     esempio:     item.esempio     || "",
                     traduzione:  item.traduzione  || "",
-                    audio:       item.audio       || null
+                    audio:            item.audio            || null,
+                    diff_linguistica: item.diff_linguistica || null,
+                    diff_traduzione:  item.diff_traduzione  || null
                 }));
         } else if (data && typeof data === 'object') {
             list = Object.entries(data)
                 .filter(([k,v]) => typeof k === 'string' && k.trim() && v && typeof v === 'object')
                 .map(([termine, record]) => ({
-                    termine:     termine.trim(),
-                    note:        record.note        || "",
-                    significati: Array.isArray(record.significati)
-                                    ? record.significati
-                                    : (record.significati ? String(record.significati).split(',').map(s=>s.trim()) : []),
-                    sinonimi:    record.sinonimi    || "",
-                    contrari:    record.contrari    || "",
-                    esempio:     record.esempio     || "",
-                    traduzione:  record.traduzione  || "",
-                    audio:       record.audio       || null
+                    termine:          termine.trim(),
+                    note:             record.note        || "",
+                    significati:      Array.isArray(record.significati)
+                                        ? record.significati
+                                        : (record.significati ? String(record.significati).split(',').map(s=>s.trim()) : []),
+                    sinonimi:         record.sinonimi    || "",
+                    contrari:         record.contrari    || "",
+                    esempio:          record.esempio     || "",
+                    traduzione:       record.traduzione  || "",
+                    audio:            record.audio       || null,
+                    diff_linguistica: record.diff_linguistica || null,
+                    diff_traduzione:  record.diff_traduzione  || null
                 }));
         }
         return list;
@@ -1070,15 +1259,17 @@
         const t = document.getElementById('f_termine').value.trim();
         if (!t) return showToast("Manca il termine!", "var(--danger)");
         const data = {
-            termine:     t,
-            note:        document.getElementById('f_note').value,
-            significati: document.getElementById('f_significato').value.split(',').map(s=>s.trim()),
-            sinonimi:    document.getElementById('f_sinonimi').value,
-            contrari:    document.getElementById('f_contrari').value,
-            esempio:     document.getElementById('f_esempio').value,
-            traduzione:  document.getElementById('f_traduzione').value,
-            audio:       currentAudio,
-            timestamp:   firebase.firestore.FieldValue.serverTimestamp()
+            termine:          t,
+            note:             document.getElementById('f_note').value,
+            significati:      document.getElementById('f_significato').value.split(',').map(s=>s.trim()),
+            sinonimi:         document.getElementById('f_sinonimi').value,
+            contrari:         document.getElementById('f_contrari').value,
+            esempio:          document.getElementById('f_esempio').value,
+            traduzione:       document.getElementById('f_traduzione').value,
+            audio:            currentAudio,
+            diff_linguistica: _diffLing,
+            diff_traduzione:  _diffTrad,
+            timestamp:        firebase.firestore.FieldValue.serverTimestamp()
         };
         await db.termini.put(data);
         try { await cloudSet(t, data); }
@@ -1098,9 +1289,13 @@
         document.getElementById('f_esempio').value     = i.esempio     || "";
         document.getElementById('f_traduzione').value  = i.traduzione  || "";
         currentAudio = i.audio;
+        _diffLing = i.diff_linguistica || null;
+        _diffTrad = i.diff_traduzione  || null;
         updateAudioUI();
         drawChips('sinonimi');
         drawChips('contrari');
+        renderDiffButtons();
+        renderDiffBadges();
         if (window.innerWidth <= 900) {
             closeSidebar();
             document.querySelector('main').scrollTo(0, 0);
@@ -1143,6 +1338,9 @@
         document.querySelectorAll('input:not(#sidebarSearch), textarea').forEach(i => i.value = "");
         currentAudio = null; updateAudioUI();
         document.querySelectorAll('.chip-container').forEach(c => c.innerHTML = "");
+        _diffLing = null; _diffTrad = null;
+        renderDiffButtons();
+        renderDiffBadges();
     }
 
     async function deleteEntry() { return requireEdit(_deleteEntry); }
@@ -1181,6 +1379,223 @@
             refreshSidebar();
         } catch (e) { console.log("Sync Firebase:", e.message); }
     }
+
+    // ================================================================
+    // DIFFICOLTÀ — FUNZIONI CORE
+    // ================================================================
+
+    function setDiff(cat, level) {
+        if (!_isEditMode) return;
+        if (cat === 'ling') {
+            _diffLing = (_diffLing === level) ? null : level;
+        } else {
+            _diffTrad = (_diffTrad === level) ? null : level;
+        }
+        renderDiffButtons();
+        renderDiffBadges();
+    }
+
+    function renderDiffButtons() {
+        ['ling','trad'].forEach(cat => {
+            const val = cat === 'ling' ? _diffLing : _diffTrad;
+            ['alto','medio','basso'].forEach(lv => {
+                const btn = document.getElementById('diff-' + cat + '-' + lv);
+                if (!btn) return;
+                btn.classList.remove('active-alto','active-medio','active-basso');
+                if (val === lv) btn.classList.add('active-' + lv);
+            });
+        });
+    }
+
+    function renderDiffBadges() {
+        ['ling','trad'].forEach(cat => {
+            const val  = cat === 'ling' ? _diffLing : _diffTrad;
+            const wrap = document.getElementById('diff-' + cat + '-badge-wrap');
+            if (!wrap) return;
+            if (_isEditMode) { wrap.innerHTML = ''; return; }
+            const icons  = { alto:'🔴', medio:'🟡', basso:'🟢' };
+            const labels = { ling:'Linguistica', trad:'Traduzione' };
+            if (!val) {
+                wrap.innerHTML = '<span class="diff-badge nc" style="margin-top:4px;display:inline-block;">⬜ Non classificato</span>';
+            } else {
+                wrap.innerHTML = '<span class="diff-badge ' + val + '" style="margin-top:4px;display:inline-block;">' + icons[val] + ' ' + val.charAt(0).toUpperCase()+val.slice(1) + ' — ' + labels[cat] + '</span>';
+            }
+        });
+    }
+
+    // ================================================================
+    // FILTRI SIDEBAR
+    // ================================================================
+
+    function toggleFilter(cat, level) {
+        const s = _filters[cat];
+        if (s.has(level)) s.delete(level); else s.add(level);
+        const chip = document.getElementById('fc-' + cat + '-' + level);
+        if (chip) chip.classList.toggle('active', s.has(level));
+        const total = _filters.ling.size + _filters.trad.size;
+        const badge = document.getElementById('filter-active-count');
+        if (badge) {
+            badge.textContent = total;
+            badge.style.display = total > 0 ? 'inline' : 'none';
+        }
+        refreshSidebar();
+    }
+
+    function resetFilters() {
+        _filters.ling.clear();
+        _filters.trad.clear();
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        const badge = document.getElementById('filter-active-count');
+        if (badge) badge.style.display = 'none';
+        refreshSidebar();
+    }
+
+    // ================================================================
+    // STAMPA — helper badge
+    // ================================================================
+
+    function _printDiffBadge(val, label) {
+        if (!val) return '<span class="print-diff-badge pdb-nc">' + label + ' N/C</span>';
+        return '<span class="print-diff-badge pdb-' + val + '">' + label + ' ' + val.charAt(0).toUpperCase()+val.slice(1) + '</span>';
+    }
+
+    // ================================================================
+    // MODALE STATISTICHE
+    // ================================================================
+
+    async function showStats() {
+        document.getElementById('stats-modal').classList.add('open');
+        await buildStatsModal();
+    }
+
+    function hideStats() {
+        document.getElementById('stats-modal').classList.remove('open');
+    }
+
+    async function buildStatsModal() {
+        const all   = await db.termini.toArray();
+        const total = all.length;
+        const withAudio    = all.filter(i => !!i.audio).length;
+        const withoutAudio = total - withAudio;
+        const counts = {
+            ling: { alto:0, medio:0, basso:0, nc:0 },
+            trad: { alto:0, medio:0, basso:0, nc:0 }
+        };
+        all.forEach(i => {
+            const l = i.diff_linguistica || 'nc';
+            const t = i.diff_traduzione  || 'nc';
+            counts.ling[l] = (counts.ling[l] || 0) + 1;
+            counts.trad[t] = (counts.trad[t] || 0) + 1;
+        });
+        const ncBoth = all.filter(i => !i.diff_linguistica && !i.diff_traduzione);
+
+        document.getElementById('stats-counters').innerHTML =
+            '<div class="stat-card full">' +
+                '<span class="stat-icon">📚</span>' +
+                '<span class="stat-value">' + total + '</span>' +
+                '<span class="stat-label">Termini in archivio</span>' +
+            '</div>' +
+            '<div class="stat-card success">' +
+                '<span class="stat-icon">🔊</span>' +
+                '<span class="stat-value">' + withAudio + '</span>' +
+                '<span class="stat-label">Con audio</span>' +
+            '</div>' +
+            '<div class="stat-card danger">' +
+                '<span class="stat-icon">🔇</span>' +
+                '<span class="stat-value">' + withoutAudio + '</span>' +
+                '<span class="stat-label">Senza audio</span>' +
+            '</div>' +
+            '<div class="stat-card warn">' +
+                '<span class="stat-icon">⬜</span>' +
+                '<span class="stat-value">' + ncBoth.length + '</span>' +
+                '<span class="stat-label">Non classificati (entrambi)</span>' +
+            '</div>' +
+            '<div class="stat-card">' +
+                '<span class="stat-icon">✅</span>' +
+                '<span class="stat-value">' + (total - counts.ling.nc) + '</span>' +
+                '<span class="stat-label">Classificati Ling.</span>' +
+            '</div>' +
+            '<div class="stat-card">' +
+                '<span class="stat-icon">✅</span>' +
+                '<span class="stat-value">' + (total - counts.trad.nc) + '</span>' +
+                '<span class="stat-label">Classificati Trad.</span>' +
+            '</div>';
+
+        function makeBars(catCounts) {
+            const rows = [
+                { key:'alto',  label:'🔴 Alto',  cls:'bar-alto'  },
+                { key:'medio', label:'🟡 Medio', cls:'bar-medio' },
+                { key:'basso', label:'🟢 Basso', cls:'bar-basso' },
+                { key:'nc',    label:'⬜ N/C',   cls:'bar-nc'    }
+            ];
+            return rows.map(function(r) {
+                const n   = catCounts[r.key] || 0;
+                const pct = total > 0 ? Math.round(n / total * 100) : 0;
+                return '<div class="stats-bar-row">' +
+                    '<span class="stats-bar-label">' + r.label + '</span>' +
+                    '<div class="stats-bar-track">' +
+                        '<div class="stats-bar-fill ' + r.cls + '" style="width:' + pct + '%"></div>' +
+                    '</div>' +
+                    '<span class="stats-bar-count">' + n + '</span>' +
+                '</div>';
+            }).join('');
+        }
+
+        document.getElementById('stats-bars-ling').innerHTML = makeBars(counts.ling);
+        document.getElementById('stats-bars-trad').innerHTML = makeBars(counts.trad);
+
+        document.getElementById('nc-count-label').textContent = '(' + ncBoth.length + ')';
+        if (ncBoth.length === 0) {
+            document.getElementById('nc-list').innerHTML =
+                '<div style="color:var(--success);font-size:0.8rem;padding:8px;text-align:center;">✅ Tutti i termini sono classificati!</div>';
+        } else {
+            const sorted = ncBoth.sort((a,b) => a.termine.localeCompare(b.termine));
+            document.getElementById('nc-list').innerHTML = sorted.map(function(i) {
+                return '<div class="nc-item" onclick="openNcTerm(\'' + i.termine.replace(/'/g,"\\'") + '\')">' +
+                    '<strong>' + i.termine + '</strong>' +
+                    '<span class="nc-classify-hint">✏️ Classifica</span>' +
+                '</div>';
+            }).join('');
+        }
+    }
+
+    async function openNcTerm(termine) {
+        hideStats();
+        await loadTerm(termine);
+        setTimeout(function() {
+            const diffSection = document.getElementById('diff-ling-group');
+            if (diffSection) diffSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (_isEditMode) {
+                showToast('✏️ Assegna i gradi di difficoltà e salva', 'var(--ariolisi-color)');
+            } else {
+                showToast('👁 Entra in modalità Modifica per classificare', '#334155');
+            }
+        }, 300);
+    }
+
 </script>
+
+<!-- ================================================================
+     MODALE STATISTICHE
+================================================================ -->
+<div id="stats-modal" onclick="if(event.target===this)hideStats()">
+    <div class="stats-box">
+        <div class="stats-title">📊 Statistiche Archivio</div>
+        <div class="stats-grid" id="stats-counters">
+            <!-- populated by JS -->
+        </div>
+        <div class="stats-section-title">Distribuzione Linguistica / Pronuncia</div>
+        <div id="stats-bars-ling"></div>
+        <div class="stats-section-title">Distribuzione Traduzione / Interpretazione</div>
+        <div id="stats-bars-trad"></div>
+        <div class="stats-section-title">Termini Non Classificati <span id="nc-count-label" style="font-weight:400; color:#94a3b8;"></span></div>
+        <div class="nc-list" id="nc-list">
+            <div style="color:#94a3b8; font-size:0.75rem; padding:6px;">Caricamento...</div>
+        </div>
+        <p style="font-size:0.65rem; color:#94a3b8; margin-top:8px;">Clicca su un termine non classificato per aprirlo e assegnare i gradi di difficoltà.</p>
+        <button onclick="hideStats()" class="btn-util" style="width:100%; background:var(--success); padding:10px; margin-top:14px; font-size:0.9rem;">✕ Chiudi</button>
+    </div>
+</div>
+
 </body>
 </html>
