@@ -9,171 +9,450 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
     <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
 
     <style>
+        /* ================================================================
+           VARIABILI & RESET
+        ================================================================ */
         :root {
-            --bg-page: #f1f5f9; --bg-card: #C5FFF1; --primary: #0f172a; --accent: #2563eb;
-            --border-input: #0000FF; --text-main: #1e293b; --success: #10b981; --danger: #FF0000;
-            --ariolisi-color: #E67E00; --sidebar-width: 350px;
+            --bg-page: #f1f5f9;
+            --bg-card: #C5FFF1;
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --border-input: #0000FF;
+            --text-main: #1e293b;
+            --success: #10b981;
+            --danger: #FF0000;
+            --ariolisi-color: #E67E00;
+            --sidebar-width: 350px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-page);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-page); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        header { background: var(--primary); color: white; padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; z-index: 1000; }
-        .cloud-status { font-size: 0.7rem; display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; }
+        /* ================================================================
+           HEADER
+        ================================================================ */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+        .cloud-status {
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
         .status-online { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
+        /* Badge modalità accesso nell'header */
+        #mode-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #mode-badge.edit-mode { background: var(--success); border-color: var(--success); }
+        #mode-badge:hover { opacity: 0.8; }
+
+        /* ================================================================
+           LAYOUT
+        ================================================================ */
         .app-container { display: flex; flex: 1; overflow: hidden; }
-        aside { width: var(--sidebar-width); background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+
+        aside {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
         .archive-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s; }
         .archive-item:hover { background: var(--primary); color: white; }
 
         main { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; justify-content: center; }
-        .form-container { background: var(--bg-card); width: 100%; max-width: 1000px; padding: 2rem; border-radius: 12px; height: fit-content; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .form-container {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 1000px;
+            padding: 2rem;
+            border-radius: 12px;
+            height: fit-content;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
 
-        .evidenza-ariolisi { font-family: 'Playfair Display', serif; color: var(--ariolisi-color); font-size: 1.8rem; font-style: italic; font-weight: 700; }
-        .field-label { font-weight: 700; font-size: 0.7rem; color: #0000FF; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        /* ================================================================
+           FORM ELEMENTS
+        ================================================================ */
+        .evidenza-ariolisi {
+            font-family: 'Playfair Display', serif;
+            color: var(--ariolisi-color);
+            font-size: 1.8rem;
+            font-style: italic;
+            font-weight: 700;
+        }
+        .field-label {
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: #0000FF;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .dict-icon { cursor: pointer; font-size: 0.9rem; }
 
-        .input-esaltato { width: 100%; border: 2px solid var(--border-input); border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 1rem; background: white; }
+        .input-esaltato {
+            width: 100%;
+            border: 2px solid var(--border-input);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+        .input-esaltato:disabled { background: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #cbd5e1; }
         .input-termine { font-family: 'Playfair Display'; font-size: 1.2rem; font-weight: 700; }
 
         .chip-container { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; min-height: 20px; }
         .chip { background: var(--primary); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; }
         .chip.missing { background: #94a3b8; }
 
-        .audio-console { background: rgba(255,255,255,0.5); border: 2px dashed var(--border-input); border-radius: 8px; padding: 10px; text-align: center; }
-        .btn-audio { width: 35px; height: 35px; border-radius: 50%; border: none; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
-
-        #toast { position: fixed; bottom: 50px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; display: none; z-index: 9999; }
-        .btn-util { background: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-
-        footer { background: #334155; color: #cbd5e1; text-align: center; padding: 6px; font-size: 0.75rem; border-top: 1px solid var(--ariolisi-color); }
-        .footer-name { font-style: italic; font-weight: 800; color: #ffffff; margin-left: 5px; }
-
-        #info-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 5000; }
-
-        /* === LOGIN MODAL === */
-        #login-modal {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.88);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9000;
+        .audio-console {
+            background: rgba(255,255,255,0.5);
+            border: 2px dashed var(--border-input);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
         }
-        #login-box {
-            background: white; border-radius: 14px; padding: 36px 30px;
-            width: min(380px, 92vw); text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        .btn-audio {
+            width: 35px; height: 35px;
+            border-radius: 50%; border: none;
+            cursor: pointer; color: white;
+            display: flex; align-items: center; justify-content: center;
         }
-        #login-box h2 { font-family: 'Playfair Display', serif; color: var(--ariolisi-color); font-size: 1.5rem; margin-bottom: 4px; }
-        #login-box p  { font-size: 0.78rem; color: #64748b; margin-bottom: 20px; }
-        #login-pwd    { width: 100%; padding: 12px; border: 2px solid var(--border-input); border-radius: 7px; font-size: 1rem; margin-bottom: 10px; text-align: center; letter-spacing: 3px; }
-        #login-error  { color: var(--danger); font-size: 0.78rem; min-height: 18px; margin-bottom: 8px; }
-        #login-btn    { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 7px; font-size: 1rem; font-weight: 800; cursor: pointer; }
-        #login-auth-status { font-size: 0.68rem; color: #94a3b8; margin-top: 12px; min-height: 16px; }
+        .btn-audio:disabled { opacity: 0.3 !important; cursor: not-allowed; }
 
-        /* === TERMINE SEARCH DROPDOWN === */
+        /* ================================================================
+           TERMINE SEARCH DROPDOWN
+        ================================================================ */
         .termine-wrapper { position: relative; }
         #termine-suggestions {
             position: absolute; top: 100%; left: 0; right: 0;
-            background: white; border: 2px solid var(--accent); border-top: none;
-            border-radius: 0 0 8px 8px; z-index: 200;
-            max-height: 180px; overflow-y: auto; display: none;
+            background: white;
+            border: 2px solid var(--accent); border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 200; max-height: 180px; overflow-y: auto;
+            display: none;
             box-shadow: 0 6px 16px rgba(0,0,0,0.15);
         }
         .sugg-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
         .sugg-item:hover { background: var(--accent); color: white; }
         .sugg-item small { opacity: 0.7; font-size: 0.75rem; display: block; }
         #f_termine.termine-exists { border-color: var(--ariolisi-color); background: #fff8f0; }
-        .termine-badge { display: none; font-size: 0.65rem; color: var(--ariolisi-color); font-weight: 700; margin-top: -8px; margin-bottom: 6px; }
+        .termine-badge {
+            display: none;
+            font-size: 0.65rem;
+            color: var(--ariolisi-color);
+            font-weight: 700;
+            margin-top: -8px;
+            margin-bottom: 6px;
+        }
 
-        /* === STAMPA ARCHIVIO COMPLETO === */
+        /* ================================================================
+           BUTTONS & UTILITIES
+        ================================================================ */
+        #toast {
+            position: fixed; bottom: 50px; right: 20px;
+            padding: 12px 20px; border-radius: 8px;
+            color: white; display: none; z-index: 9999;
+        }
+        .btn-util {
+            background: #64748b; color: white; border: none;
+            padding: 8px 12px; border-radius: 5px;
+            cursor: pointer; font-size: 0.8rem; font-weight: bold;
+        }
+        .btn-util:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ================================================================
+           FOOTER
+        ================================================================ */
+        footer {
+            background: #334155; color: #cbd5e1;
+            text-align: center; padding: 6px;
+            font-size: 0.75rem;
+            border-top: 1px solid var(--ariolisi-color);
+            flex-shrink: 0;
+        }
+        .footer-name { font-style: italic; font-weight: 800; color: #ffffff; margin-left: 5px; }
+
+        /* ================================================================
+           MODALI GENERICI
+        ================================================================ */
+        #info-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center;
+            z-index: 5000;
+        }
+
+        /* ================================================================
+           MASCHERA ACCESSO DOPPIA
+        ================================================================ */
+        #access-modal {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9000;
+        }
+        #access-box {
+            width: min(500px, 94vw);
+            text-align: center;
+        }
+        #access-box .app-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--ariolisi-color);
+            font-size: 2.2rem;
+            font-style: italic;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        #access-box .app-subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        /* Le due card di scelta */
+        .access-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .access-card {
+            background: rgba(255,255,255,0.07);
+            border: 2px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 24px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+        .access-card:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        .access-card.selected { border-color: var(--ariolisi-color); background: rgba(230,126,0,0.15); }
+        .access-card .card-icon { font-size: 2rem; margin-bottom: 10px; }
+        .access-card .card-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+        .access-card .card-desc { font-size: 0.72rem; color: #94a3b8; line-height: 1.5; }
+
+        /* Pannello login (inizialmente nascosto) */
+        #login-panel {
+            display: none;
+            background: rgba(255,255,255,0.07);
+            border: 2px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        #login-panel label { display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
+        #login-email, #login-pwd {
+            width: 100%; padding: 12px 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white; font-size: 0.95rem;
+            margin-bottom: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #login-email::placeholder, #login-pwd::placeholder { color: #64748b; }
+        #login-email:focus, #login-pwd:focus { border-color: var(--ariolisi-color); }
+        #login-error {
+            color: #fca5a5;
+            font-size: 0.78rem;
+            min-height: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* Pulsante azione principale */
+        #access-btn {
+            width: 100%; padding: 14px;
+            background: var(--ariolisi-color);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 800;
+            cursor: pointer; transition: opacity 0.2s;
+            letter-spacing: 0.5px;
+        }
+        #access-btn:hover { opacity: 0.88; }
+        #access-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #access-spinner { display: none; font-size: 0.8rem; color: #94a3b8; margin-top: 12px; }
+
+        /* ================================================================
+           STAMPA ARCHIVIO COMPLETO
+        ================================================================ */
         #print-archive { display: none; }
         @media print {
             body > *:not(#print-archive) { display: none !important; }
-            #print-archive { display: block !important; font-family: 'Inter', sans-serif; padding: 20px; background: white; }
-            #print-archive h1 { font-family: 'Playfair Display', serif; color: #E67E00; font-size: 1.8rem; margin-bottom: 4px; }
+            #print-archive {
+                display: block !important;
+                font-family: 'Inter', sans-serif;
+                padding: 20px; background: white;
+            }
+            #print-archive h1 {
+                font-family: 'Playfair Display', serif;
+                color: #E67E00; font-size: 1.8rem; margin-bottom: 4px;
+            }
             #print-archive .print-meta { font-size: 0.75rem; color: #64748b; margin-bottom: 20px; }
-            .print-card { border: 1px solid #ccc; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
-            .print-card h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #0f172a; margin-bottom: 6px; }
+            .print-card {
+                border: 1px solid #ccc; border-radius: 8px;
+                padding: 14px 18px; margin-bottom: 14px;
+                page-break-inside: avoid; break-inside: avoid;
+            }
+            .print-card h2 {
+                font-family: 'Playfair Display', serif;
+                font-size: 1.3rem; color: #0f172a; margin-bottom: 6px;
+            }
             .print-card .print-row { font-size: 0.82rem; margin-bottom: 3px; }
-            .print-card .print-label { font-weight: 700; color: #0000FF; text-transform: uppercase; font-size: 0.68rem; }
+            .print-card .print-label {
+                font-weight: 700; color: #0000FF;
+                text-transform: uppercase; font-size: 0.68rem;
+            }
         }
 
-        /* === MOBILE: nascondi stampa nell'header, mostra nel form === */
+        /* ================================================================
+           MOBILE: stampa nascosta in header, visibile nel form
+        ================================================================ */
         @media (max-width: 900px) {
             .btn-stampa-header { display: none !important; }
             .btn-stampa-form   { display: inline-block !important; }
         }
         .btn-stampa-form { display: none; }
 
-        /* === MOBILE / TABLET === */
+        /* ================================================================
+           SIDEBAR TOGGLE MOBILE
+        ================================================================ */
         .sidebar-toggle {
-            display: none; background: none; border: 1px solid rgba(255,255,255,0.5);
-            color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 1.1rem;
+            display: none;
+            background: none; border: 1px solid rgba(255,255,255,0.5);
+            color: white; padding: 5px 10px; border-radius: 5px;
+            cursor: pointer; font-size: 1.1rem;
         }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 900; }
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4); z-index: 900;
+        }
 
+        /* ================================================================
+           RESPONSIVE MOBILE / TABLET
+        ================================================================ */
         @media (max-width: 900px) {
             aside {
-                position: fixed; left: -105%; top: 0; height: 100%; z-index: 950;
-                width: min(320px, 85vw); transition: left 0.28s ease;
+                position: fixed; left: -105%; top: 0; height: 100%;
+                z-index: 950; width: min(320px, 85vw);
+                transition: left 0.28s ease;
                 box-shadow: 4px 0 20px rgba(0,0,0,0.2);
             }
             aside.open { left: 0; }
             .sidebar-overlay.open { display: block; }
             .sidebar-toggle { display: inline-flex; align-items: center; }
+
             header { padding: 0.6rem 1rem; flex-wrap: wrap; gap: 8px; }
             header > div:first-child { flex: 1; min-width: 0; }
-            header div[style*="font-weight: 800"] { font-size: 0.9rem !important; }
             .nav-btns { gap: 6px; flex-wrap: wrap; }
             .btn-util { padding: 6px 9px; font-size: 0.72rem; }
+
             main { padding: 0.75rem; }
             .form-container { padding: 1rem; }
-            .form-container > div:first-child { flex-direction: column !important; align-items: stretch !important; gap: 10px; }
-            .form-container > div:first-child > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; }
+
+            .form-container > div:first-child {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px;
+            }
+            .form-container > div:first-child > div:last-child {
+                display: flex; flex-wrap: wrap; gap: 6px;
+            }
             .evidenza-ariolisi { font-size: 1.3rem; }
+
             div[style*="grid-template-columns: 2fr 1fr"],
             div[style*="grid-template-columns: 1fr 220px"],
-            div[style*="grid-template-columns: 1fr 1fr"] { display: flex !important; flex-direction: column !important; }
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                display: flex !important; flex-direction: column !important;
+            }
             .audio-console { padding: 8px; }
             .input-esaltato { padding: 12px 10px; font-size: 1rem; }
             textarea.input-esaltato { min-height: 90px; }
             #toast { bottom: 20px; right: 10px; left: 10px; text-align: center; }
+
+            /* Maschera accesso: stack verticale su mobile */
+            .access-cards { grid-template-columns: 1fr; gap: 10px; }
+            #access-box .app-title { font-size: 1.6rem; }
         }
 
         @media (min-width: 901px) and (max-width: 1100px) {
             :root { --sidebar-width: 260px; }
             .form-container { padding: 1.2rem; }
-            div[style*="grid-template-columns: 2fr 1fr"] { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; }
+            div[style*="grid-template-columns: 2fr 1fr"] {
+                display: flex !important; flex-direction: column !important;
+            }
         }
     </style>
 </head>
 <body>
 
+<!-- ================================================================
+     HEADER
+================================================================ -->
 <header>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <button class="sidebar-toggle" onclick="toggleSidebar()" title="Apri archivio">☰</button>
-        <div style="font-weight: 800; font-size: 1.1rem;">DIALETTI PRO V16.9.5</div>
+        <div style="font-weight:800; font-size:1.1rem;">DIALETTI PRO V16.9.5</div>
         <div class="cloud-status">
             <div id="sync-dot" class="status-dot"></div>
             <span id="sync-text">Connessione...</span>
         </div>
+        <div id="mode-badge" onclick="switchToEdit()" title="Clicca per accedere in modifica">👁 Sola lettura</div>
     </div>
     <div class="nav-btns" style="display:flex; gap:10px;">
         <button onclick="printArchive()" class="btn-util btn-stampa-header" style="background:var(--accent)">🖨️ Stampa</button>
         <button onclick="exportBackup()" class="btn-util">📤 Backup</button>
-        <button onclick="document.getElementById('fileImporter').click()" class="btn-util">📥 Importa</button>
+        <button id="btn-importa" onclick="document.getElementById('fileImporter').click()" class="btn-util" disabled>📥 Importa</button>
         <input type="file" id="fileImporter" style="display:none" accept=".json" onchange="processImport(event)">
         <button onclick="showInfo()" class="btn-util" style="border-radius:50%; width:30px; height:30px; padding:0;">i</button>
     </div>
 </header>
 
+<!-- ================================================================
+     LAYOUT PRINCIPALE
+================================================================ -->
 <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <div class="app-container">
@@ -184,7 +463,8 @@
         </div>
         <div style="padding:10px;">
             <input type="text" id="sidebarSearch" placeholder="Cerca termini o note..."
-                   style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;" oninput="refreshSidebar()">
+                   style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;"
+                   oninput="refreshSidebar()">
         </div>
         <div id="archive-list" style="overflow-y:auto; flex:1;"></div>
     </aside>
@@ -196,43 +476,43 @@
                     <h4 style="color:#0000FF; text-transform:uppercase; font-size:0.7rem;">Scheda Digitale</h4>
                     <span class="evidenza-ariolisi">Dialettu Ariolisu</span>
                 </div>
-                <div style="display:flex; gap:8px;">
-                    <button onclick="clearForm()" class="btn-util">Pulisci</button>
-                    <button onclick="deleteEntry()" class="btn-util" style="background:var(--danger)">Elimina</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button id="btn-pulisci" onclick="clearForm()" class="btn-util" disabled>Pulisci</button>
+                    <button id="btn-elimina" onclick="deleteEntry()" class="btn-util" style="background:var(--danger)" disabled>Elimina</button>
                     <button onclick="printArchive()" class="btn-util btn-stampa-form" style="background:var(--accent)">🖨️</button>
-                    <button onclick="saveToCloud()" style="padding:10px 20px; background:var(--success); color:white; border:none; border-radius:5px; cursor:pointer; font-weight:800;">💾 SALVA SCHEDA</button>
+                    <button id="btn-salva" onclick="saveToCloud()" style="padding:10px 20px; background:var(--success); color:white; border:none; border-radius:5px; cursor:pointer; font-weight:800;" disabled>💾 SALVA SCHEDA</button>
                 </div>
             </div>
 
             <div style="display:grid; grid-template-columns: 2fr 1fr; gap:15px;">
                 <div>
-                    <label class="field-label">Termine Dialettale <span class="dict-icon" onclick="startDict('f_termine')">🎤</span></label>
+                    <label class="field-label">Termine Dialettale <span class="dict-icon" id="mic-termine" onclick="startDict('f_termine')" style="display:none">🎤</span></label>
                     <div class="termine-wrapper">
                         <input type="text" id="f_termine" class="input-esaltato input-termine"
                                autocomplete="off" spellcheck="false"
-                               oninput="onTermineInput()" onblur="closeTermineSugg()">
+                               oninput="onTermineInput()" onblur="closeTermineSugg()" disabled>
                         <div id="termine-suggestions"></div>
                     </div>
                     <div id="termine-badge" class="termine-badge">⚠️ Termine già in archivio — clicca per caricarlo</div>
                 </div>
                 <div>
-                    <label class="field-label">Note / Legami <span class="dict-icon" onclick="startDict('f_note')">🎤</span></label>
-                    <input type="text" id="f_note" class="input-esaltato" spellcheck="false">
+                    <label class="field-label">Note / Legami <span class="dict-icon" id="mic-note" onclick="startDict('f_note')" style="display:none">🎤</span></label>
+                    <input type="text" id="f_note" class="input-esaltato" spellcheck="false" disabled>
                 </div>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 220px; gap:15px;">
                 <div>
-                    <label class="field-label">Significati <span class="dict-icon" onclick="startDict('f_significato')">🎤</span></label>
-                    <input type="text" id="f_significato" class="input-esaltato">
+                    <label class="field-label">Significati <span class="dict-icon" id="mic-significato" onclick="startDict('f_significato')" style="display:none">🎤</span></label>
+                    <input type="text" id="f_significato" class="input-esaltato" disabled>
                 </div>
                 <div class="audio-console">
                     <label class="field-label" style="justify-content:center; font-size:0.6rem;">Pronuncia & Trascrizione</label>
                     <div style="display:flex; gap:8px; justify-content:center; margin-top:5px;">
-                        <button id="recBtn"    class="btn-audio" style="background:var(--danger);"           onclick="startRec()">●</button>
-                        <button id="stopBtn"   class="btn-audio" style="background:var(--primary); display:none;" onclick="stopRec()">■</button>
-                        <button id="playBtn"   class="btn-audio" style="background:var(--success); opacity:0.3;" onclick="playAudio()">▶</button>
-                        <button id="delAudioBtn" class="btn-audio" style="background:#64748b; opacity:0.3;"  onclick="deleteAudio()">🗑</button>
+                        <button id="recBtn"     class="btn-audio" style="background:var(--danger);"            onclick="startRec()" disabled>●</button>
+                        <button id="stopBtn"    class="btn-audio" style="background:var(--primary); display:none;" onclick="stopRec()">■</button>
+                        <button id="playBtn"    class="btn-audio" style="background:var(--success); opacity:0.3;" onclick="playAudio()">▶</button>
+                        <button id="delAudioBtn" class="btn-audio" style="background:#64748b; opacity:0.3;"    onclick="deleteAudio()" disabled>🗑</button>
                     </div>
                     <div id="audioStatus" style="font-size:0.55rem; margin-top:5px; font-weight:bold;">VUOTO</div>
                 </div>
@@ -240,27 +520,27 @@
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div>
-                    <label class="field-label">Sinonimi <span class="dict-icon" onclick="startDict('f_sinonimi')">🎤</span></label>
-                    <input type="text" id="f_sinonimi" class="input-esaltato" spellcheck="false" oninput="drawChips('sinonimi')">
+                    <label class="field-label">Sinonimi <span class="dict-icon" id="mic-sinonimi" onclick="startDict('f_sinonimi')" style="display:none">🎤</span></label>
+                    <input type="text" id="f_sinonimi" class="input-esaltato" spellcheck="false" oninput="drawChips('sinonimi')" disabled>
                     <div id="chips-sinonimi" class="chip-container"></div>
                 </div>
                 <div>
-                    <label class="field-label">Contrari <span class="dict-icon" onclick="startDict('f_contrari')">🎤</span></label>
-                    <input type="text" id="f_contrari" class="input-esaltato" spellcheck="false" oninput="drawChips('contrari')">
+                    <label class="field-label">Contrari <span class="dict-icon" id="mic-contrari" onclick="startDict('f_contrari')" style="display:none">🎤</span></label>
+                    <input type="text" id="f_contrari" class="input-esaltato" spellcheck="false" oninput="drawChips('contrari')" disabled>
                     <div id="chips-contrari" class="chip-container"></div>
                 </div>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div style="display:flex; flex-direction:column;">
-                    <label class="field-label">Esempi Utilizzo <span class="dict-icon" onclick="startDict('f_esempio')">🎤</span></label>
+                    <label class="field-label">Esempi Utilizzo <span class="dict-icon" id="mic-esempio" onclick="startDict('f_esempio')" style="display:none">🎤</span></label>
                     <textarea id="f_esempio" class="input-esaltato" rows="6" spellcheck="false"
-                              placeholder="1. Esempio..." onkeydown="handleNumbering(event)"></textarea>
+                              placeholder="1. Esempio..." onkeydown="handleNumbering(event)" disabled></textarea>
                 </div>
                 <div style="display:flex; flex-direction:column;">
-                    <label class="field-label">Traduzione Italiano <span class="dict-icon" onclick="startDict('f_traduzione')">🎤</span></label>
+                    <label class="field-label">Traduzione Italiano <span class="dict-icon" id="mic-traduzione" onclick="startDict('f_traduzione')" style="display:none">🎤</span></label>
                     <textarea id="f_traduzione" class="input-esaltato" rows="6"
-                              placeholder="1. Traduzione..." onkeydown="handleNumbering(event)"></textarea>
+                              placeholder="1. Traduzione..." onkeydown="handleNumbering(event)" disabled></textarea>
                 </div>
             </div>
         </div>
@@ -271,23 +551,51 @@
     <span>© 2026 - app sviluppata da:</span><span class="footer-name">Michele ing. Altamura</span>
 </footer>
 
-<!-- LOGIN MODAL -->
-<div id="login-modal">
-    <div id="login-box">
-        <h2>Dialettu Ariolisu</h2>
-        <p>Inserisci la password per modificare l'archivio</p>
-        <input type="password" id="login-pwd" placeholder="••••••••"
-               onkeydown="if(event.key==='Enter') doLogin()">
-        <div id="login-error"></div>
-        <button id="login-btn" onclick="doLogin()">🔓 Accedi</button>
-        <div id="login-auth-status">Autenticazione Firebase in corso...</div>
+<!-- ================================================================
+     MASCHERA ACCESSO DOPPIA
+================================================================ -->
+<div id="access-modal">
+    <div id="access-box">
+        <div class="app-title">Dialettu Ariolisu</div>
+        <div class="app-subtitle">Archivio Linguistico · Ariolisi</div>
+
+        <!-- Due card di scelta -->
+        <div class="access-cards">
+            <div class="access-card selected" id="card-read" onclick="selectMode('read')">
+                <div class="card-icon">👁</div>
+                <div class="card-title">Consulta</div>
+                <div class="card-desc">Sfoglia e cerca i termini del dialetto.<br>Nessuna credenziale richiesta.</div>
+            </div>
+            <div class="access-card" id="card-edit" onclick="selectMode('edit')">
+                <div class="card-icon">✏️</div>
+                <div class="card-title">Modifica</div>
+                <div class="card-desc">Aggiungi, modifica ed elimina termini.<br>Richiede email e password.</div>
+            </div>
+        </div>
+
+        <!-- Pannello login (visibile solo se si sceglie Modifica) -->
+        <div id="login-panel">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="la-tua@email.it"
+                   onkeydown="if(event.key==='Enter') document.getElementById('login-pwd').focus()">
+            <label>Password</label>
+            <input type="password" id="login-pwd" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') doAccess()">
+            <div id="login-error"></div>
+        </div>
+
+        <button id="access-btn" onclick="doAccess()">👁 Entra in consultazione</button>
+        <div id="access-spinner">⏳ Autenticazione in corso...</div>
     </div>
 </div>
 
+<!-- ================================================================
+     MODALI SECONDARIE
+================================================================ -->
 <div id="info-modal">
     <div style="background:white; padding:30px; border-radius:12px; max-width:600px; width:90%;">
         <h3>Info Progetto Dialettu Ariolisu</h3>
-        <p>Strumento per la preservazione del patrimonio linguistico autoctono.</p>
+        <p style="margin-top:10px;">Strumento per la preservazione del patrimonio linguistico autoctono.</p>
         <button onclick="hideInfo()" class="btn-util" style="width:100%; background:var(--success); padding:10px; margin-top:15px;">Ho capito</button>
     </div>
 </div>
@@ -295,20 +603,21 @@
 <div id="print-archive"></div>
 <div id="toast"></div>
 
+<!-- ================================================================
+     SCRIPT
+================================================================ -->
 <script>
-    // =========================================================================
+    // ================================================================
     // ▼▼▼  CONFIGURAZIONE — modifica solo questa sezione  ▼▼▼
-    // =========================================================================
+    // ================================================================
 
-    // Password di accesso all'app
-    const APP_PASSWORD = "ariolisi2026";
-
-    // UID Firebase Anonymous autorizzato a scrivere su Firestore.
-    // Prima esecuzione: lascia stringa vuota "".
-    // Dopo il primo login, apri la console del browser (F12) e copia l'UID
-    // che appare nel messaggio "Firebase UID: xxxxx".
-    // Poi incollalo qui e aggiorna anche le regole Firestore (vedi istruzioni).
-    const AUTHORIZED_UID = ""; // ← es: "aBcDeFgHiJkLmN012345"
+    // Email e password dell'utente Firebase creato in Console
+    // (verranno usate per il login in modifica — non hardcoded visibili all'utente)
+    // NOTA: questi valori sono nel sorgente HTML: chiunque li veda può modificare
+    // l'archivio SE conosce anche le regole Firestore. La vera protezione
+    // è nelle regole Firestore che verificano request.auth.uid.
+    const FIREBASE_EDITOR_EMAIL    = "infopubblinet@libero.it"; // ← tua email Firebase
+    const FIREBASE_EDITOR_PASSWORD = "dialettuariolisu";  // ← tua password Firebase
 
     const firebaseConfig = {
         apiKey:            "AIzaSyDrhYsAnpM0okQ5SNedPtELT7Zsj53_4rk",
@@ -319,9 +628,9 @@
         appId: "1:216557717972:web:51ab4cdd5c82c071132e41"
     };
 
-    // =========================================================================
+    // ================================================================
     // ▲▲▲  FINE CONFIGURAZIONE  ▲▲▲
-    // =========================================================================
+    // ================================================================
 
     // --- INIT FIREBASE ---
     firebase.initializeApp(firebaseConfig);
@@ -332,95 +641,191 @@
     const db = new Dexie("DialettiV16_9_4");
     db.version(1).stores({ termini: "termine, significati, note" });
 
-    let currentAudio   = null;
-    let mediaRecorder, recognition = null;
-    let _authenticated = false;  // password UI superata
-    let _firebaseUser  = null;   // utente Firebase Anonymous corrente
+    // --- STATO GLOBALE ---
+    let currentAudio  = null;
+    let mediaRecorder = null;
+    let recognition   = null;
+    let _isEditMode   = false;   // true = utente loggato con Firebase Email/Password
+    let _selectedMode = 'read';  // 'read' | 'edit' — scelta corrente nella maschera
 
-    // =========================================================================
-    // AUTENTICAZIONE ANONIMA FIREBASE
-    // Ogni browser/dispositivo ottiene un UID anonimo persistente in localStorage.
-    // Solo l'UID impostato in AUTHORIZED_UID potrà scrivere su Firestore.
-    // =========================================================================
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            _firebaseUser = user;
-            console.log("Firebase UID:", user.uid);
-            document.getElementById('login-auth-status').innerText =
-                "🔒 Auth OK · UID: " + user.uid;
+    // ================================================================
+    // MASCHERA ACCESSO — LOGICA
+    // ================================================================
+    function selectMode(mode) {
+        _selectedMode = mode;
+        document.getElementById('card-read').classList.toggle('selected', mode === 'read');
+        document.getElementById('card-edit').classList.toggle('selected', mode === 'edit');
+
+        const panel = document.getElementById('login-panel');
+        const btn   = document.getElementById('access-btn');
+
+        if (mode === 'edit') {
+            panel.style.display = 'block';
+            btn.textContent = '🔓 Accedi in modifica';
         } else {
-            auth.signInAnonymously().catch(err => {
-                console.warn("Auth anonima non disponibile:", err.message);
-                document.getElementById('login-auth-status').innerText =
-                    "⚠️ Auth Firebase non attiva — abilita Anonymous in Console";
-            });
+            panel.style.display = 'none';
+            btn.textContent = '👁 Entra in consultazione';
         }
-    });
+        document.getElementById('login-error').innerText = '';
+    }
 
-    // =========================================================================
-    // LOGIN CON PASSWORD LOCALE
-    // =========================================================================
-    function doLogin() {
-        const pwd = document.getElementById('login-pwd').value;
-        if (pwd === APP_PASSWORD) {
-            _authenticated = true;
-            document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('login-pwd').value = '';
-            // Se AUTHORIZED_UID non è ancora impostato, guida l'utente
-            if (!AUTHORIZED_UID && _firebaseUser) {
-                console.warn(
-                    "─────────────────────────────────────────────\n" +
-                    "AUTHORIZED_UID non impostato.\n" +
-                    "Copia questo UID, incollalo in AUTHORIZED_UID\n" +
-                    "e aggiorna le regole Firestore:\n\n" +
-                    _firebaseUser.uid +
-                    "\n─────────────────────────────────────────────"
-                );
-                showToast("⚠️ Vedi console (F12) per UID Firebase", "#E67E00");
-            }
-        } else {
-            document.getElementById('login-error').innerText = '❌ Password errata';
-            document.getElementById('login-pwd').value = '';
-            setTimeout(() => document.getElementById('login-error').innerText = '', 2500);
+    async function doAccess() {
+        if (_selectedMode === 'read') {
+            // Accesso diretto senza credenziali
+            enterReadMode();
+            return;
+        }
+        // Modalità modifica → login Firebase Email/Password
+        const btn     = document.getElementById('access-btn');
+        const spinner = document.getElementById('access-spinner');
+        btn.disabled  = true;
+        spinner.style.display = 'block';
+        document.getElementById('login-error').innerText = '';
+
+        // Usa le credenziali hardcoded dalla configurazione
+        // (l'utente non le digita manualmente — sicurezza tramite Firebase UID nelle regole)
+        try {
+            await auth.signInWithEmailAndPassword(
+                FIREBASE_EDITOR_EMAIL,
+                FIREBASE_EDITOR_PASSWORD
+            );
+            enterEditMode();
+        } catch (err) {
+            let msg = '❌ Accesso non riuscito';
+            if (err.code === 'auth/wrong-password')    msg = '❌ Password Firebase errata';
+            if (err.code === 'auth/user-not-found')    msg = '❌ Utente non trovato in Firebase';
+            if (err.code === 'auth/network-request-failed') msg = '❌ Nessuna connessione internet';
+            if (err.code === 'auth/too-many-requests') msg = '⚠️ Troppi tentativi, riprova più tardi';
+            document.getElementById('login-error').innerText = msg;
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
         }
     }
 
-    function requireAuth(fn) {
-        if (!_authenticated) {
-            showToast("🔒 Accesso richiesto", "var(--danger)");
-            document.getElementById('login-modal').style.display = 'flex';
+    function enterReadMode() {
+        _isEditMode = false;
+        document.getElementById('access-modal').style.display = 'none';
+        setUIMode(false);
+        // Carica dati da Firebase (sola lettura, non richiede auth)
+        refreshSidebar();
+        pullFromFirebase();
+        showToast("👁 Modalità consultazione", "#334155");
+    }
+
+    function enterEditMode() {
+        _isEditMode = true;
+        document.getElementById('access-modal').style.display = 'none';
+        setUIMode(true);
+        refreshSidebar();
+        pullFromFirebase();
+        showToast("✏️ Modalità modifica attiva", "var(--success)");
+    }
+
+    // Abilita/disabilita tutti i controlli di modifica in base alla modalità
+    function setUIMode(editMode) {
+        // Badge header
+        const badge = document.getElementById('mode-badge');
+        if (editMode) {
+            badge.textContent  = '✏️ Modifica';
+            badge.classList.add('edit-mode');
+            badge.title = 'Clicca per uscire dalla modifica';
+            badge.onclick = doLogout;
+        } else {
+            badge.textContent  = '👁 Sola lettura';
+            badge.classList.remove('edit-mode');
+            badge.title = 'Clicca per accedere in modifica';
+            badge.onclick = switchToEdit;
+        }
+
+        // Pulsanti header
+        document.getElementById('btn-importa').disabled = !editMode;
+
+        // Pulsanti form
+        document.getElementById('btn-pulisci').disabled = !editMode;
+        document.getElementById('btn-elimina').disabled = !editMode;
+        document.getElementById('btn-salva').disabled   = !editMode;
+        document.getElementById('btn-salva').style.opacity = editMode ? '1' : '0.4';
+        document.getElementById('btn-salva').style.cursor  = editMode ? 'pointer' : 'not-allowed';
+
+        // Campi input/textarea
+        const fields = ['f_termine','f_note','f_significato','f_sinonimi','f_contrari','f_esempio','f_traduzione'];
+        fields.forEach(id => { document.getElementById(id).disabled = !editMode; });
+
+        // Icone microfono
+        const mics = ['mic-termine','mic-note','mic-significato','mic-sinonimi','mic-contrari','mic-esempio','mic-traduzione'];
+        mics.forEach(id => { document.getElementById(id).style.display = editMode ? 'inline' : 'none'; });
+
+        // Pulsanti audio
+        document.getElementById('recBtn').disabled     = !editMode;
+        document.getElementById('delAudioBtn').disabled = !editMode;
+
+        // Indicatore online/offline
+        if (navigator.onLine) {
+            document.getElementById('sync-dot').classList.add('status-online');
+            document.getElementById('sync-text').innerText = "Cloud Online";
+        }
+    }
+
+    // Switch da lettura a modifica (cliccando badge o pulsante)
+    function switchToEdit() {
+        if (_isEditMode) return;
+        // Mostra la maschera preselezionando Modifica
+        document.getElementById('access-modal').style.display = 'flex';
+        selectMode('edit');
+    }
+
+    async function doLogout() {
+        await auth.signOut();
+        _isEditMode = false;
+        setUIMode(false);
+        showToast("👁 Passato a sola lettura", "#334155");
+    }
+
+    // ================================================================
+    // AVVIO APP
+    // ================================================================
+    window.onload = () => {
+        // Mostra subito la maschera di accesso con Consulta preselezionato
+        selectMode('read');
+        // Se l'utente era già loggato (sessione Firebase persistente), entra direttamente
+        auth.onAuthStateChanged(user => {
+            if (user && document.getElementById('access-modal').style.display !== 'none') {
+                // Sessione attiva: entra in modifica automaticamente
+                enterEditMode();
+            }
+        });
+    };
+
+    // ================================================================
+    // SCRITTURA SU FIREBASE (solo in modalità modifica)
+    // ================================================================
+    async function cloudSet(docId, data) {
+        if (!navigator.onLine || !_isEditMode) return;
+        const user = auth.currentUser;
+        if (!user) return;
+        await fs.collection("archivio_ariolisi").doc(docId).set(data);
+    }
+
+    async function cloudDelete(docId) {
+        if (!navigator.onLine || !_isEditMode) return;
+        const user = auth.currentUser;
+        if (!user) return;
+        await fs.collection("archivio_ariolisi").doc(docId).delete();
+    }
+
+    function requireEdit(fn) {
+        if (!_isEditMode) {
+            showToast("✏️ Passa alla modalità Modifica", "var(--ariolisi-color)");
+            switchToEdit();
             return;
         }
         return fn();
     }
 
-    // =========================================================================
-    // SCRITTURA SU FIREBASE (usa utente anonimo autenticato)
-    // =========================================================================
-    async function cloudSet(docId, data) {
-        if (!navigator.onLine || !_firebaseUser) return;
-        await fs.collection("archivio_ariolisi").doc(docId).set(data);
-    }
-    async function cloudDelete(docId) {
-        if (!navigator.onLine || !_firebaseUser) return;
-        await fs.collection("archivio_ariolisi").doc(docId).delete();
-    }
-
-    // =========================================================================
-    // AVVIO APP
-    // =========================================================================
-    window.onload = async () => {
-        if (navigator.onLine) {
-            document.getElementById('sync-dot').classList.add('status-online');
-            document.getElementById('sync-text').innerText = "Cloud Online";
-        }
-        await refreshSidebar();
-        pullFromFirebase();
-    };
-
-    // =========================================================================
+    // ================================================================
     // TERMINE SEARCH / SEGNALAZIONE
-    // =========================================================================
+    // ================================================================
     let _suggTimeout = null;
     async function onTermineInput() {
         clearTimeout(_suggTimeout);
@@ -430,8 +835,10 @@
         const box   = document.getElementById('termine-suggestions');
 
         if (!val || val.length < 2) {
-            box.style.display = 'none'; badge.style.display = 'none';
-            input.classList.remove('termine-exists'); return;
+            box.style.display = 'none';
+            badge.style.display = 'none';
+            input.classList.remove('termine-exists');
+            return;
         }
         _suggTimeout = setTimeout(async () => {
             const all     = await db.termini.toArray();
@@ -441,22 +848,24 @@
                 i.termine.toLowerCase() !== val.toLowerCase()
             ).slice(0, 6);
 
-            if (exact) { input.classList.add('termine-exists'); badge.style.display = 'block'; }
-            else       { input.classList.remove('termine-exists'); badge.style.display = 'none'; }
+            input.classList.toggle('termine-exists', !!exact);
+            badge.style.display = exact ? 'block' : 'none';
 
             const items = [];
             if (exact) items.push(
                 `<div class="sugg-item"
                     onmousedown="loadTerm('${exact.termine.replace(/'/g,"\\'")}');return false;"
                     ontouchstart="loadTerm('${exact.termine.replace(/'/g,"\\'")}');return false;">
-                    ✏️ <strong>${exact.termine}</strong><small>Carica scheda esistente</small>
+                    ✏️ <strong>${exact.termine}</strong>
+                    <small>Carica scheda esistente</small>
                 </div>`
             );
             matches.forEach(i => items.push(
                 `<div class="sugg-item"
                     onmousedown="loadTerm('${i.termine.replace(/'/g,"\\'")}');return false;"
                     ontouchstart="loadTerm('${i.termine.replace(/'/g,"\\'")}');return false;">
-                    🔍 ${i.termine}<small>${i.significati?.[0] || ''}</small>
+                    🔍 ${i.termine}
+                    <small>${i.significati?.[0] || ''}</small>
                 </div>`
             ));
             box.innerHTML = items.join('');
@@ -465,12 +874,14 @@
     }
 
     function closeTermineSugg() {
-        setTimeout(() => { document.getElementById('termine-suggestions').style.display = 'none'; }, 350);
+        setTimeout(() => {
+            document.getElementById('termine-suggestions').style.display = 'none';
+        }, 350);
     }
 
-    // =========================================================================
+    // ================================================================
     // STAMPA ARCHIVIO COMPLETO
-    // =========================================================================
+    // ================================================================
     async function printArchive() {
         const all = await db.termini.toArray();
         if (!all.length) return showToast("Archivio vuoto", "var(--danger)");
@@ -492,9 +903,9 @@
         window.print();
     }
 
-    // =========================================================================
+    // ================================================================
     // SIDEBAR MOBILE
-    // =========================================================================
+    // ================================================================
     function toggleSidebar() {
         document.querySelector('aside').classList.toggle('open');
         document.getElementById('sidebar-overlay').classList.toggle('open');
@@ -504,9 +915,9 @@
         document.getElementById('sidebar-overlay').classList.remove('open');
     }
 
-    // =========================================================================
+    // ================================================================
     // IMPORTAZIONE — supporta formato nuovo (array) e vecchio (oggetto)
-    // =========================================================================
+    // ================================================================
     function normalizeImportData(data) {
         let list = [];
         if (Array.isArray(data)) {
@@ -543,7 +954,7 @@
         return list;
     }
 
-    async function processImport(e) { return requireAuth(() => _processImport(e)); }
+    async function processImport(e) { return requireEdit(() => _processImport(e)); }
     async function _processImport(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -572,9 +983,9 @@
         r.readAsText(file, "UTF-8");
     }
 
-    // =========================================================================
+    // ================================================================
     // LOGICHE UI & CORE
-    // =========================================================================
+    // ================================================================
     async function drawChips(type) {
         const val       = document.getElementById(`f_${type}`).value;
         const container = document.getElementById(`chips-${type}`);
@@ -627,7 +1038,9 @@
         let chunks    = [];
         const Speech  = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (Speech) {
-            recognition = new Speech(); recognition.lang = 'it-IT'; recognition.continuous = true;
+            recognition = new Speech();
+            recognition.lang = 'it-IT';
+            recognition.continuous = true;
             recognition.onresult = e => {
                 const t = e.results[e.results.length-1][0].transcript;
                 document.getElementById('f_note').value += ` [Vocal: ${t}]`;
@@ -652,7 +1065,7 @@
         document.getElementById('stopBtn').style.display = 'none';
     }
 
-    async function saveToCloud() { return requireAuth(_saveToCloud); }
+    async function saveToCloud() { return requireEdit(_saveToCloud); }
     async function _saveToCloud() {
         const t = document.getElementById('f_termine').value.trim();
         if (!t) return showToast("Manca il termine!", "var(--danger)");
@@ -685,9 +1098,14 @@
         document.getElementById('f_esempio').value     = i.esempio     || "";
         document.getElementById('f_traduzione').value  = i.traduzione  || "";
         currentAudio = i.audio;
-        updateAudioUI(); drawChips('sinonimi'); drawChips('contrari');
-        if (window.innerWidth <= 900) { closeSidebar(); document.querySelector('main').scrollTo(0,0); }
-        document.getElementById('termine-badge').style.display      = 'none';
+        updateAudioUI();
+        drawChips('sinonimi');
+        drawChips('contrari');
+        if (window.innerWidth <= 900) {
+            closeSidebar();
+            document.querySelector('main').scrollTo(0, 0);
+        }
+        document.getElementById('termine-badge').style.display       = 'none';
         document.getElementById('f_termine').classList.remove('termine-exists');
         document.getElementById('termine-suggestions').style.display = 'none';
     }
@@ -708,27 +1126,32 @@
         ).join('');
     }
 
-    function deleteAudio() { if (confirm("Eliminare l'audio?")) { currentAudio = null; updateAudioUI(); } }
+    function deleteAudio() {
+        if (!_isEditMode) return;
+        if (confirm("Eliminare l'audio?")) { currentAudio = null; updateAudioUI(); }
+    }
     function updateAudioUI() {
         const has = !!currentAudio;
         document.getElementById('playBtn').style.opacity     = has ? "1" : "0.3";
-        document.getElementById('delAudioBtn').style.opacity = has ? "1" : "0.3";
+        document.getElementById('delAudioBtn').style.opacity = has && _isEditMode ? "1" : "0.3";
         document.getElementById('audioStatus').innerText     = has ? "AUDIO OK" : "VUOTO";
     }
     function playAudio() { if (currentAudio) new Audio(currentAudio).play(); }
 
     function clearForm() {
-        document.querySelectorAll('input, textarea').forEach(i => i.value = "");
+        if (!_isEditMode) return;
+        document.querySelectorAll('input:not(#sidebarSearch), textarea').forEach(i => i.value = "");
         currentAudio = null; updateAudioUI();
         document.querySelectorAll('.chip-container').forEach(c => c.innerHTML = "");
     }
 
-    async function deleteEntry() { return requireAuth(_deleteEntry); }
+    async function deleteEntry() { return requireEdit(_deleteEntry); }
     async function _deleteEntry() {
         const t = document.getElementById('f_termine').value;
-        if (t && confirm(`Eliminare ${t}?`)) {
+        if (t && confirm(`Eliminare "${t}"?`)) {
             await db.termini.delete(t);
-            try { await cloudDelete(t); } catch(e) { console.warn("Delete cloud fallito:", e.message); }
+            try { await cloudDelete(t); }
+            catch(e) { console.warn("Delete cloud fallito:", e.message); }
             clearForm(); refreshSidebar();
         }
     }
@@ -756,8 +1179,7 @@
             const docs = snap.docs.map(doc => doc.data());
             await db.termini.bulkPut(docs);
             refreshSidebar();
-            showToast("Cloud Sincronizzato");
-        } catch (e) { console.log("Errore sync:", e.message); }
+        } catch (e) { console.log("Sync Firebase:", e.message); }
     }
 </script>
 </body>
